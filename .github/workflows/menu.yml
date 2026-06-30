@@ -1,0 +1,55 @@
+name: Regenerar Menú
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # Cada hora
+  workflow_dispatch:        # Permite dispararlo manualmente desde GitHub
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar menú
+        env:
+          CLOVER_API_TOKEN: ${{ secrets.CLOVER_API_TOKEN }}
+          CLOVER_MERCHANT_ID: ${{ secrets.CLOVER_MERCHANT_ID }}
+          CLOVER_REGION: ${{ secrets.CLOVER_REGION }}
+          RESTAURANT_NAME: ${{ secrets.RESTAURANT_NAME }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OUTPUT_DIR: ./output
+        run: npm run generate
+
+      - name: Guardar cambios en el historial
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/menu.html output/translations-cache.json
+          git diff --staged --quiet || git commit -m "menu: regenerado $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
+
+      - name: Publicar en GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
+          commit_message: "deploy: menu ${{ github.run_number }}"

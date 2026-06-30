@@ -1,0 +1,19 @@
+{
+  "name": "menu-clover",
+  "version": "1.0.0",
+  "description": "Genera un menú digital HTML a partir de productos de Clover POS",
+  "scripts": {
+    "build": "tsc",
+    "generate": "npx ts-node src/index.ts",
+    "dev": "npx ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.107.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
