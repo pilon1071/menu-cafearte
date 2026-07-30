@@ -26,6 +26,7 @@ async function main() {
   const region = process.env.CLOVER_REGION ?? "us";
   const restaurantName = process.env.RESTAURANT_NAME ?? "Mi Restaurante";
   const outputDir = process.env.OUTPUT_DIR ?? "./output";
+  const cloverOnlineUrl = process.env.CLOVER_ONLINE_URL ?? "https://cafearte-mission.cloveronline.com";
 
   console.log(`\n🍽  Generando menú para: ${restaurantName}`);
   console.log(`📡 Conectando a Clover API (${region})...\n`);
@@ -105,6 +106,7 @@ async function main() {
     categories,
     modifierGroupsMap,
     translations,
+    cloverOnlineUrl,
     new Date()
   );
 
