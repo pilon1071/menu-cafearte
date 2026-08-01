@@ -606,10 +606,10 @@ export function generateMenuHTML(
         <span class="text-es">Al dar clic en "Ir a pagar" abriremos Clover Online Ordering en una nueva pestaña. Usa esta lista como referencia.</span>
         <span class="text-en">Clicking "Go to checkout" will open Clover Online Ordering in a new tab. Use this list as your reference.</span>
       </p>
-      <a href="${escapeHtml(cloverOnlineUrl)}" target="_blank" rel="noopener noreferrer" class="btn-checkout" id="btn-checkout">
+      <button class="btn-checkout" id="btn-checkout" onclick="openCheckout()">
         <span class="text-es">Ir a pagar en Clover →</span>
         <span class="text-en">Go to checkout →</span>
-      </a>
+      </button>
     </div>
   </div>
 
@@ -764,6 +764,11 @@ export function generateMenuHTML(
       document.getElementById('cart-drawer').classList.remove('open');
       document.getElementById('cart-overlay').classList.remove('open');
       document.body.style.overflow = '';
+    }
+
+    function openCheckout() {
+      var win = window.open(CLOVER_URL, '_blank');
+      if (win) { win.opener = null; }
     }
 
     // Quick add (items without modifiers)
