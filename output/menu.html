@@ -1721,7 +1721,7 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
   <footer>
     <span class="text-es">Actualizado el</span>
     <span class="text-en">Updated on</span>
-    1 de agosto de 2026 a las 2:24 a.m.
+    1 de agosto de 2026 a las 3:19 a.m.
   </footer>
 
   <!-- CART FAB -->
@@ -1753,10 +1753,10 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
         <span class="text-es">Al dar clic en "Ir a pagar" abriremos Clover Online Ordering en una nueva pestaña. Usa esta lista como referencia.</span>
         <span class="text-en">Clicking "Go to checkout" will open Clover Online Ordering in a new tab. Use this list as your reference.</span>
       </p>
-      <a href="https://cafearte-mission.cloveronline.com" target="_blank" rel="noopener noreferrer" class="btn-checkout" id="btn-checkout">
+      <button class="btn-checkout" id="btn-checkout" onclick="openCheckout()">
         <span class="text-es">Ir a pagar en Clover →</span>
         <span class="text-en">Go to checkout →</span>
-      </a>
+      </button>
     </div>
   </div>
 
@@ -1911,6 +1911,11 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
       document.getElementById('cart-drawer').classList.remove('open');
       document.getElementById('cart-overlay').classList.remove('open');
       document.body.style.overflow = '';
+    }
+
+    function openCheckout() {
+      var win = window.open(CLOVER_URL, '_blank');
+      if (win) { win.opener = null; }
     }
 
     // Quick add (items without modifiers)
