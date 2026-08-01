@@ -191,7 +191,7 @@ export function generateMenuHTML(
   categories: CloverCategory[],
   modifierGroupsMap: Map<string, CloverModifierGroup>,
   translations: Record<string, string>,
-  cloverOnlineUrl: string,
+  ordersApiUrl: string,
   generatedAt: Date
 ): string {
   const sections = groupItemsByCategory(items, categories);
@@ -475,16 +475,36 @@ export function generateMenuHTML(
       margin-bottom: 1rem; text-align: center;
     }
 
+    .table-note-input {
+      width: 100%; padding: 0.65rem 0.85rem; margin-bottom: 0.85rem;
+      background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--cream); font-family: var(--ui); font-size: 0.82rem; outline: none;
+    }
+    .table-note-input:focus { border-color: rgba(201,169,97,.5); }
+    .table-note-input::placeholder { color: var(--cream-muted); }
+
+    .order-confirmed { text-align: center; padding: 3rem 1.4rem; }
+    .order-confirmed-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .order-confirmed-title { color: var(--cream); font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .order-confirmed-id { font-family: var(--display); font-style: italic; font-size: 0.9rem; color: var(--gold); margin-bottom: 0.75rem; }
+    .order-confirmed-note { font-size: 0.8rem; color: var(--cream-muted); line-height: 1.5; }
+    .btn-new-order {
+      margin-top: 1.4rem; padding: 0.6rem 1.4rem;
+      background: rgba(201,169,97,.12); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--gold); font-family: var(--ui); font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: background .18s;
+    }
+    .btn-new-order:hover { background: rgba(201,169,97,.22); }
+
     .btn-checkout {
       display: flex; align-items: center; justify-content: center; gap: 0.5rem;
       width: 100%; padding: 0.85rem 1rem;
       background: var(--gold); color: var(--bean); border: none; border-radius: 10px;
       font-family: var(--ui); font-size: 0.9rem; font-weight: 700; letter-spacing: .06em;
-      text-decoration: none; cursor: pointer;
-      transition: background .2s, transform .2s;
+      cursor: pointer; transition: background .2s, transform .2s;
     }
     .btn-checkout:hover { background: var(--gold-hover); transform: translateY(-1px); }
-    .btn-checkout:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+    .btn-checkout:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
     /* ── FOOTER ── */
     footer { text-align: center; color: var(--cream-muted); font-size: 0.72rem; letter-spacing: .08em; padding: 2rem 1rem; border-top: 1px solid var(--border); }
@@ -597,18 +617,16 @@ export function generateMenuHTML(
       <button class="cart-close-btn" onclick="closeCartDrawer()">✕</button>
     </div>
     <div class="cart-items-list" id="cart-items-list"></div>
-    <div class="cart-drawer-footer">
+    <div class="cart-drawer-footer" id="cart-drawer-footer">
       <div class="cart-total-row">
         <span class="cart-total-label">Total</span>
         <span class="cart-total-amount" id="cart-total-amount">$0.00</span>
       </div>
-      <p class="cart-note">
-        <span class="text-es">Al dar clic en "Ir a pagar" abriremos Clover Online Ordering en una nueva pestaña. Usa esta lista como referencia.</span>
-        <span class="text-en">Clicking "Go to checkout" will open Clover Online Ordering in a new tab. Use this list as your reference.</span>
-      </p>
-      <button class="btn-checkout" id="btn-checkout" onclick="openCheckout()">
-        <span class="text-es">Ir a pagar en Clover →</span>
-        <span class="text-en">Go to checkout →</span>
+      <input type="text" id="table-note" class="table-note-input" maxlength="60"
+        placeholder="Mesa o nota (opcional) / Table or note" />
+      <button class="btn-checkout" id="btn-place-order" onclick="placeOrder()">
+        <span class="text-es">Hacer pedido</span>
+        <span class="text-en">Place Order</span>
       </button>
     </div>
   </div>
@@ -640,7 +658,7 @@ export function generateMenuHTML(
   <script id="menu-data" type="application/json">${menuDataJson}</script>
   <script>
     var MENU_DATA = JSON.parse(document.getElementById('menu-data').textContent);
-    var CLOVER_URL = '${escapeHtmlInJs(cloverOnlineUrl)}';
+    var ORDERS_API_URL = '${escapeHtmlInJs(ordersApiUrl)}';
 
     // ── LANGUAGE ──
     function getLang() { return document.documentElement.getAttribute('data-lang') || 'es'; }
@@ -719,7 +737,7 @@ export function generateMenuHTML(
         var modIds = selectedModsObj[gId];
         for (var k = 0; k < modIds.length; k++) {
           var mod = group.modifiers.filter(function(m) { return m.id === modIds[k]; })[0];
-          if (mod) { modifiers.push({ name: mod.name, price: mod.price }); extra += mod.price; }
+          if (mod) { modifiers.push({ id: mod.id, name: mod.name, price: mod.price }); extra += mod.price; }
         }
       }
       var unitTotal = item.price + extra;
@@ -766,9 +784,62 @@ export function generateMenuHTML(
       document.body.style.overflow = '';
     }
 
-    function openCheckout() {
-      var win = window.open(CLOVER_URL, '_blank');
-      if (win) { win.opener = null; }
+    function placeOrder() {
+      if (cart.length === 0) return;
+      var lang = getLang();
+      var btn = document.getElementById('btn-place-order');
+      btn.disabled = true;
+      btn.querySelector('.text-es').textContent = 'Enviando...';
+      btn.querySelector('.text-en').textContent = 'Sending...';
+
+      var tableNote = (document.getElementById('table-note').value || '').trim();
+
+      fetch(ORDERS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: cart, tableNote: tableNote || undefined })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok || !res.data.orderId) throw new Error(res.data.error || 'Error desconocido');
+        showOrderConfirmation(res.data.orderId, lang);
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        btn.querySelector('.text-es').textContent = 'Hacer pedido';
+        btn.querySelector('.text-en').textContent = 'Place Order';
+        alert((lang === 'en' ? 'Could not send order: ' : 'Error al enviar pedido: ') + err.message);
+      });
+    }
+
+    function showOrderConfirmation(orderId, lang) {
+      cart = [];
+      saveCart();
+      updateCartBadge();
+      document.getElementById('cart-drawer-footer').style.display = 'none';
+      document.getElementById('cart-items-list').innerHTML =
+        '<div class="order-confirmed">' +
+          '<div class="order-confirmed-icon">✅</div>' +
+          '<p class="order-confirmed-title">' + (lang === 'en' ? 'Order sent!' : '¡Pedido enviado!') + '</p>' +
+          '<p class="order-confirmed-id"># ' + orderId + '</p>' +
+          '<p class="order-confirmed-note">' +
+            (lang === 'en'
+              ? 'Your order is now in the POS. Staff will prepare it shortly.'
+              : 'Tu orden ya está en el POS. El staff la preparará en breve.') +
+          '</p>' +
+          '<button class="btn-new-order" onclick="resetCart()">' +
+            (lang === 'en' ? 'Start new order' : 'Nuevo pedido') +
+          '</button>' +
+        '</div>';
+    }
+
+    function resetCart() {
+      document.getElementById('cart-drawer-footer').style.display = '';
+      document.getElementById('btn-place-order').disabled = false;
+      document.getElementById('btn-place-order').querySelector('.text-es').textContent = 'Hacer pedido';
+      document.getElementById('btn-place-order').querySelector('.text-en').textContent = 'Place Order';
+      document.getElementById('table-note').value = '';
+      renderCartItems();
     }
 
     // Quick add (items without modifiers)

@@ -36,7 +36,7 @@ jobs:
           CLOVER_REGION: ${{ secrets.CLOVER_REGION }}
           RESTAURANT_NAME: ${{ secrets.RESTAURANT_NAME }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLOVER_ONLINE_URL: ${{ secrets.CLOVER_ONLINE_URL }}
+          ORDERS_API_URL: ${{ secrets.ORDERS_API_URL }}
           OUTPUT_DIR: ./output
         run: npm run generate
 
