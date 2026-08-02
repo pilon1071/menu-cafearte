@@ -26,7 +26,7 @@ async function main() {
   const region = process.env.CLOVER_REGION ?? "us";
   const restaurantName = process.env.RESTAURANT_NAME ?? "Mi Restaurante";
   const outputDir = process.env.OUTPUT_DIR ?? "./output";
-  const ordersApiUrl = process.env.ORDERS_API_URL ?? "";
+  const ordersApiUrl = process.env.ORDERS_API_URL ?? "/api/create-order";
 
   console.log(`\n🍽  Generando menú para: ${restaurantName}`);
   console.log(`📡 Conectando a Clover API (${region})...\n`);

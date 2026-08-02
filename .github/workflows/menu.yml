@@ -7,11 +7,9 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
-  generate-and-deploy:
+  generate:
     runs-on: ubuntu-latest
 
     steps:
@@ -36,22 +34,13 @@ jobs:
           CLOVER_REGION: ${{ secrets.CLOVER_REGION }}
           RESTAURANT_NAME: ${{ secrets.RESTAURANT_NAME }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          ORDERS_API_URL: ${{ secrets.ORDERS_API_URL }}
           OUTPUT_DIR: ./output
         run: npm run generate
 
-      - name: Guardar cambios en el historial
+      - name: Guardar y publicar
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add output/menu.html output/translations-cache.json
           git diff --staged --quiet || git commit -m "menu: regenerado $(date -u +'%Y-%m-%d %H:%M UTC')"
           git push
-
-      - name: Publicar en GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./output
-          cname: menu.cafearte.net
-          commit_message: "deploy: menu ${{ github.run_number }}"

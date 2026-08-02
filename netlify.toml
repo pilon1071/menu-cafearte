@@ -1,0 +1,16 @@
+[build]
+  publish = "output"
+  functions = "netlify/functions"
+
+# /api/create-order → función de Netlify
+[[redirects]]
+  from = "/api/create-order"
+  to = "/.netlify/functions/create-order"
+  status = 200
+  force = true
+
+# Ruta raíz → menú
+[[redirects]]
+  from = "/"
+  to = "/menu.html"
+  status = 200
