@@ -24,11 +24,8 @@ function cloverFetch(method, path, body) {
         let data = "";
         res.on("data", (c) => (data += c));
         res.on("end", () => {
-          try {
-            resolve({ status: res.statusCode, body: JSON.parse(data) });
-          } catch {
-            resolve({ status: res.statusCode, body: data });
-          }
+          try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+          catch { resolve({ status: res.statusCode, body: data }); }
         });
       }
     );
@@ -52,22 +49,26 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "JSON inválido" }) };
   }
 
-  const { items, tableNote } = body;
+  const { items, customerName, tableInfo, paymentIntentId } = body;
 
   if (!Array.isArray(items) || items.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Carrito vacío" }) };
   }
-
   if (!TOKEN || !MID) {
     return { statusCode: 500, headers, body: JSON.stringify({ error: "Credenciales de Clover no configuradas" }) };
   }
 
   try {
-    // 1. Crear la orden
+    const noteParts = [];
+    if (customerName) noteParts.push(customerName);
+    if (tableInfo) noteParts.push(tableInfo);
+    if (paymentIntentId) noteParts.push("Stripe: " + paymentIntentId);
+    const note = noteParts.join(" — ");
+
     const orderRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders`, {
       currency: "USD",
       state: "open",
-      ...(tableNote ? { note: tableNote } : {}),
+      ...(note ? { note } : {}),
     });
 
     if (orderRes.status !== 200) {
@@ -77,7 +78,6 @@ exports.handler = async function (event) {
 
     const orderId = orderRes.body.id;
 
-    // 2. Agregar líneas (una por unidad de cantidad)
     for (const cartItem of items) {
       for (let q = 0; q < cartItem.quantity; q++) {
         const liRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}/line_items`, {
@@ -85,14 +85,9 @@ exports.handler = async function (event) {
           name: cartItem.name,
         });
 
-        if (liRes.status !== 200) {
-          console.error("Line item error:", liRes.body);
-          continue;
-        }
+        if (liRes.status !== 200) { console.error("Line item error:", liRes.body); continue; }
 
         const lineItemId = liRes.body.id;
-
-        // 3. Agregar modificadores
         for (const mod of cartItem.modifiers || []) {
           if (!mod.id) continue;
           await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}/line_items/${lineItemId}/modifications`, {

@@ -208,6 +208,7 @@ export function generateMenuHTML(
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://js.stripe.com/v3/"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -475,13 +476,32 @@ export function generateMenuHTML(
       margin-bottom: 1rem; text-align: center;
     }
 
-    .table-note-input {
+    .checkout-label {
+      display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--cream-muted); margin-bottom: 0.35rem;
+    }
+    .checkout-input {
       width: 100%; padding: 0.65rem 0.85rem; margin-bottom: 0.85rem;
       background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 8px;
-      color: var(--cream); font-family: var(--ui); font-size: 0.82rem; outline: none;
+      color: var(--cream); font-family: var(--ui); font-size: 0.85rem; outline: none;
     }
-    .table-note-input:focus { border-color: rgba(201,169,97,.5); }
-    .table-note-input::placeholder { color: var(--cream-muted); }
+    .checkout-input:focus { border-color: rgba(201,169,97,.5); }
+    .checkout-input::placeholder { color: var(--cream-muted); }
+
+    .order-type-toggle { display: flex; gap: 0.5rem; margin-bottom: 0.85rem; }
+    .order-type-btn {
+      flex: 1; padding: 0.6rem 0.5rem; border-radius: 8px; cursor: pointer;
+      background: rgba(255,255,255,.04); border: 1px solid var(--border);
+      color: var(--cream-muted); font-family: var(--ui); font-size: 0.82rem; font-weight: 600;
+      transition: all .18s;
+    }
+    .order-type-btn.active { background: rgba(201,169,97,.15); border-color: var(--gold); color: var(--gold); }
+
+    .stripe-card-wrap {
+      padding: 0.75rem 0.85rem; margin-bottom: 0.6rem;
+      background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 8px;
+    }
+    .stripe-error { color: #ff6b6b; font-size: 0.78rem; margin-bottom: 0.65rem; display: none; }
 
     .order-confirmed { text-align: center; padding: 3rem 1.4rem; }
     .order-confirmed-icon { font-size: 2.5rem; margin-bottom: 1rem; }
@@ -622,11 +642,34 @@ export function generateMenuHTML(
         <span class="cart-total-label">Total</span>
         <span class="cart-total-amount" id="cart-total-amount">$0.00</span>
       </div>
-      <input type="text" id="table-note" class="table-note-input" maxlength="60"
-        placeholder="Mesa o nota (opcional) / Table or note" />
-      <button class="btn-checkout" id="btn-place-order" onclick="placeOrder()">
-        <span class="text-es">Hacer pedido</span>
-        <span class="text-en">Place Order</span>
+      <label class="checkout-label text-es">Nombre *</label>
+      <label class="checkout-label text-en">Name *</label>
+      <input type="text" id="customer-name" class="checkout-input" maxlength="60"
+        placeholder="Tu nombre / Your name" autocomplete="name" />
+
+      <label class="checkout-label text-es">Pedido para *</label>
+      <label class="checkout-label text-en">Order for *</label>
+      <div class="order-type-toggle">
+        <button class="order-type-btn active" id="btn-type-mesa" onclick="selectOrderType('mesa')">
+          <span class="text-es">Mesa</span><span class="text-en">Table</span>
+        </button>
+        <button class="order-type-btn" id="btn-type-llevar" onclick="selectOrderType('llevar')">
+          <span class="text-es">Para llevar</span><span class="text-en">To go</span>
+        </button>
+      </div>
+      <div id="table-number-wrap">
+        <input type="text" id="table-number-input" class="checkout-input" maxlength="20"
+          placeholder="# de mesa / Table number" />
+      </div>
+
+      <label class="checkout-label text-es">Tarjeta *</label>
+      <label class="checkout-label text-en">Card *</label>
+      <div class="stripe-card-wrap" id="stripe-card-element"></div>
+      <div class="stripe-error" id="stripe-error"></div>
+
+      <button class="btn-checkout" id="btn-pay" onclick="processPayment()">
+        <span id="btn-pay-label-es" class="text-es">Pagar $0.00</span>
+        <span id="btn-pay-label-en" class="text-en">Pay $0.00</span>
       </button>
     </div>
   </div>
@@ -685,11 +728,16 @@ export function generateMenuHTML(
 
     function updateCartBadge() {
       var count = cart.reduce(function(s, i) { return s + i.quantity; }, 0);
+      var total = fmt(cartTotalCents());
       document.getElementById('cart-count').textContent = count;
-      document.getElementById('cart-fab-total').textContent = fmt(cartTotalCents());
-      document.getElementById('cart-total-amount').textContent = fmt(cartTotalCents());
+      document.getElementById('cart-fab-total').textContent = total;
+      document.getElementById('cart-total-amount').textContent = total;
       var fab = document.getElementById('cart-fab');
       fab.style.display = count > 0 ? 'flex' : 'none';
+      var esLbl = document.getElementById('btn-pay-label-es');
+      var enLbl = document.getElementById('btn-pay-label-en');
+      if (esLbl) esLbl.textContent = 'Pagar ' + total;
+      if (enLbl) enLbl.textContent = 'Pay ' + total;
     }
 
     function renderCartItems() {
@@ -784,35 +832,74 @@ export function generateMenuHTML(
       document.body.style.overflow = '';
     }
 
-    function placeOrder() {
+    var selectedOrderType = 'mesa';
+
+    function selectOrderType(type) {
+      selectedOrderType = type;
+      document.getElementById('btn-type-mesa').classList.toggle('active', type === 'mesa');
+      document.getElementById('btn-type-llevar').classList.toggle('active', type === 'llevar');
+      document.getElementById('table-number-wrap').style.display = type === 'mesa' ? 'block' : 'none';
+    }
+
+    function processPayment() {
       if (cart.length === 0) return;
       var lang = getLang();
-      var btn = document.getElementById('btn-place-order');
+      var name = (document.getElementById('customer-name').value || '').trim();
+      var tableInput = (document.getElementById('table-number-input').value || '').trim();
+      var errEl = document.getElementById('stripe-error');
+      errEl.style.display = 'none';
+
+      if (!name) {
+        errEl.textContent = lang === 'en' ? 'Please enter your name.' : 'Ingresa tu nombre.';
+        errEl.style.display = 'block'; return;
+      }
+      if (selectedOrderType === 'mesa' && !tableInput) {
+        errEl.textContent = lang === 'en' ? 'Please enter your table number.' : 'Ingresa el número de mesa.';
+        errEl.style.display = 'block'; return;
+      }
+
+      var tableInfo = selectedOrderType === 'mesa'
+        ? 'Mesa ' + tableInput
+        : (lang === 'en' ? 'To go' : 'Para llevar');
+
+      var btn = document.getElementById('btn-pay');
       btn.disabled = true;
-      btn.querySelector('.text-es').textContent = 'Enviando...';
-      btn.querySelector('.text-en').textContent = 'Sending...';
+      document.getElementById('btn-pay-label-es').textContent = 'Procesando...';
+      document.getElementById('btn-pay-label-en').textContent = 'Processing...';
 
-      var tableNote = (document.getElementById('table-note').value || '').trim();
-
-      fetch(ORDERS_API_URL, {
+      fetch('/api/payment-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: cart, tableNote: tableNote || undefined })
+        body: JSON.stringify({ amount: cartTotalCents() })
       })
       .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
       .then(function(res) {
-        if (!res.ok || !res.data.orderId) throw new Error(res.data.error || 'Error desconocido');
-        showOrderConfirmation(res.data.orderId, lang);
+        if (!res.ok) throw new Error(res.data.error || 'Error al iniciar el pago');
+        return stripe.confirmCardPayment(res.data.clientSecret, {
+          payment_method: { card: cardElement, billing_details: { name: name } }
+        });
+      })
+      .then(function(result) {
+        if (result.error) throw new Error(result.error.message);
+        var piId = result.paymentIntent.id;
+        return fetch(ORDERS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cart, customerName: name, tableInfo: tableInfo, paymentIntentId: piId })
+        }).then(function(r) { return r.json().then(function(d) { return { data: d, piId: piId }; }); });
+      })
+      .then(function(res) {
+        showOrderConfirmation(res.data.orderId || res.piId, name, tableInfo, lang);
       })
       .catch(function(err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
         btn.disabled = false;
-        btn.querySelector('.text-es').textContent = 'Hacer pedido';
-        btn.querySelector('.text-en').textContent = 'Place Order';
-        alert((lang === 'en' ? 'Could not send order: ' : 'Error al enviar pedido: ') + err.message);
+        updateCartBadge();
       });
     }
 
-    function showOrderConfirmation(orderId, lang) {
+    function showOrderConfirmation(orderId, name, tableInfo, lang) {
       cart = [];
       saveCart();
       updateCartBadge();
@@ -820,25 +907,23 @@ export function generateMenuHTML(
       document.getElementById('cart-items-list').innerHTML =
         '<div class="order-confirmed">' +
           '<div class="order-confirmed-icon">✅</div>' +
-          '<p class="order-confirmed-title">' + (lang === 'en' ? 'Order sent!' : '¡Pedido enviado!') + '</p>' +
+          '<p class="order-confirmed-title">' + (lang === 'en' ? 'Payment received!' : '¡Pago recibido!') + '</p>' +
           '<p class="order-confirmed-id"># ' + orderId + '</p>' +
-          '<p class="order-confirmed-note">' +
-            (lang === 'en'
-              ? 'Your order is now in the POS. Staff will prepare it shortly.'
-              : 'Tu orden ya está en el POS. El staff la preparará en breve.') +
-          '</p>' +
-          '<button class="btn-new-order" onclick="resetCart()">' +
-            (lang === 'en' ? 'Start new order' : 'Nuevo pedido') +
-          '</button>' +
+          '<p class="order-confirmed-note">' + name + ' — ' + tableInfo + '</p>' +
+          '<p class="order-confirmed-note">' + (lang === 'en' ? 'Your order is being prepared.' : 'Tu orden está siendo preparada.') + '</p>' +
+          '<button class="btn-new-order" onclick="resetCart()">' + (lang === 'en' ? 'New order' : 'Nuevo pedido') + '</button>' +
         '</div>';
     }
 
     function resetCart() {
+      if (typeof cardElement !== 'undefined') cardElement.clear();
+      document.getElementById('customer-name').value = '';
+      document.getElementById('table-number-input').value = '';
+      document.getElementById('stripe-error').style.display = 'none';
+      selectOrderType('mesa');
       document.getElementById('cart-drawer-footer').style.display = '';
-      document.getElementById('btn-place-order').disabled = false;
-      document.getElementById('btn-place-order').querySelector('.text-es').textContent = 'Hacer pedido';
-      document.getElementById('btn-place-order').querySelector('.text-en').textContent = 'Place Order';
-      document.getElementById('table-note').value = '';
+      document.getElementById('btn-pay').disabled = false;
+      updateCartBadge();
       renderCartItems();
     }
 
@@ -1006,6 +1091,27 @@ export function generateMenuHTML(
 
     updateCartBadge();
     renderCartItems();
+
+    // ── STRIPE ──
+    var stripe = Stripe('pk_live_51TeI6H2M0oDJ2A8nELGM2WdopsTWdzrrmIJNDDxq2u1L26KA7Bh9SAkzKqcrhYDFDQLDsjQ2aMfLoKHK1oyj93ct00dmJnTsyt');
+    var stripeElements = stripe.elements();
+    var cardElement = stripeElements.create('card', {
+      style: {
+        base: {
+          color: '#F4EBDD',
+          fontFamily: '"Manrope", system-ui, sans-serif',
+          fontSize: '14px',
+          '::placeholder': { color: 'rgba(244,235,221,0.45)' }
+        },
+        invalid: { color: '#ff6b6b' }
+      }
+    });
+    cardElement.mount('#stripe-card-element');
+    cardElement.on('change', function(e) {
+      var errEl = document.getElementById('stripe-error');
+      if (e.error) { errEl.textContent = e.error.message; errEl.style.display = 'block'; }
+      else { errEl.style.display = 'none'; }
+    });
   </script>
 </body>
 </html>`;
