@@ -36,39 +36,45 @@ function cloverFetch(method, path, body) {
   });
 }
 
+function fmt(cents) {
+  return "$" + (cents / 100).toFixed(2);
+}
+
 exports.handler = async function (event) {
   const headers = { "Content-Type": "application/json" };
 
   if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "" };
   if (event.httpMethod !== "POST") return { statusCode: 405, headers, body: JSON.stringify({ error: "Method not allowed" }) };
 
-  let body;
-  try {
-    body = JSON.parse(event.body || "{}");
-  } catch {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: "JSON inválido" }) };
-  }
+  if (!TOKEN || !MID) return { statusCode: 500, headers, body: JSON.stringify({ error: "Credenciales de Clover no configuradas" }) };
 
-  const { items, customerName, tableInfo, paymentIntentId } = body;
+  let body;
+  try { body = JSON.parse(event.body || "{}"); }
+  catch { return { statusCode: 400, headers, body: JSON.stringify({ error: "JSON inválido" }) }; }
+
+  const { items, customerName, tableNote, taxCents = 0, serviceFeeCents = 0, tipCents = 0, totalCents = 0, paymentIntentId } = body;
 
   if (!Array.isArray(items) || items.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Carrito vacío" }) };
   }
-  if (!TOKEN || !MID) {
-    return { statusCode: 500, headers, body: JSON.stringify({ error: "Credenciales de Clover no configuradas" }) };
-  }
+
+  // Build order note with full payment breakdown
+  const noteLines = [];
+  if (customerName) noteLines.push(`Cliente: ${customerName}`);
+  if (tableNote) noteLines.push(tableNote);
+  if (paymentIntentId) noteLines.push(`✅ PAGADO via Stripe: ${paymentIntentId}`);
+  noteLines.push(`Subtotal: ${fmt(totalCents - taxCents - serviceFeeCents - tipCents)}`);
+  noteLines.push(`Impuesto (8.25%): ${fmt(taxCents)}`);
+  noteLines.push(`Servicio (4%): ${fmt(serviceFeeCents)}`);
+  if (tipCents > 0) noteLines.push(`Propina: ${fmt(tipCents)}`);
+  noteLines.push(`Total cobrado: ${fmt(totalCents)}`);
 
   try {
-    const noteParts = [];
-    if (customerName) noteParts.push(customerName);
-    if (tableInfo) noteParts.push(tableInfo);
-    if (paymentIntentId) noteParts.push("Stripe: " + paymentIntentId);
-    const note = noteParts.join(" — ");
-
+    // 1. Create order
     const orderRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders`, {
       currency: "USD",
       state: "open",
-      ...(note ? { note } : {}),
+      note: noteLines.join(" | "),
     });
 
     if (orderRes.status !== 200) {
@@ -78,6 +84,7 @@ exports.handler = async function (event) {
 
     const orderId = orderRes.body.id;
 
+    // 2. Add line items (one per quantity unit)
     for (const cartItem of items) {
       for (let q = 0; q < cartItem.quantity; q++) {
         const liRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}/line_items`, {
@@ -88,6 +95,8 @@ exports.handler = async function (event) {
         if (liRes.status !== 200) { console.error("Line item error:", liRes.body); continue; }
 
         const lineItemId = liRes.body.id;
+
+        // 3. Add modifiers
         for (const mod of cartItem.modifiers || []) {
           if (!mod.id) continue;
           await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}/line_items/${lineItemId}/modifications`, {
@@ -99,7 +108,7 @@ exports.handler = async function (event) {
       }
     }
 
-    return { statusCode: 200, headers, body: JSON.stringify({ orderId, message: "Orden enviada al POS" }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ orderId, message: "Orden creada" }) };
   } catch (err) {
     console.error("Unexpected error:", err);
     return { statusCode: 500, headers, body: JSON.stringify({ error: "Error interno", detail: err.message }) };
