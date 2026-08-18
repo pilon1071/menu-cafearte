@@ -953,6 +953,7 @@ export function generateMenuHTML(
     var stripe = Stripe('${STRIPE_PK}');
     var elements = stripe.elements();
     var cardElement = elements.create('card', {
+      hidePostalCode: true,
       style: {
         base: { color: '#F4EBDD', fontFamily: '"Manrope", system-ui, sans-serif', fontSize: '14px', '::placeholder': { color: 'rgba(244,235,221,0.45)' } },
         invalid: { color: '#ff6b6b' }
