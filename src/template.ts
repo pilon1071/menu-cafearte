@@ -430,12 +430,23 @@ export function generateMenuHTML(
       <button class="cart-close-btn" onclick="closeCartDrawer()">✕</button>
     </div>
 
-    <div class="cart-scroll">
+    <!-- Confirmation screen (hidden until order placed) -->
+    <div id="cart-confirmed" style="display:none;text-align:center;padding:3rem 1.4rem">
+      <div style="font-size:2.5rem;margin-bottom:1rem">✅</div>
+      <div id="conf-title" class="order-confirmed-title"></div>
+      <div id="conf-id" class="order-confirmed-id"></div>
+      <div id="conf-note" class="order-confirmed-note"></div>
+      <button class="btn-new-order" onclick="resetDrawer()">
+        <span class="text-es">Nueva orden</span><span class="text-en">New order</span>
+      </button>
+    </div>
+
+    <div class="cart-scroll" id="cart-main">
       <!-- Items -->
       <div class="cart-items-list" id="cart-items-list"></div>
 
       <!-- Totals -->
-      <div class="cart-totals" id="cart-totals" style="display:none">
+      <div class="cart-totals" id="cart-totals" style="display:none;">
         <div class="totals-row">
           <span><span class="text-es">Subtotal</span><span class="text-en">Subtotal</span></span>
           <span id="t-subtotal">$0.00</span>
@@ -480,7 +491,7 @@ export function generateMenuHTML(
           <span id="t-total">$0.00</span>
         </div>
       </div>
-    </div>
+    </div><!-- end cart-main -->
 
     <!-- Checkout form -->
     <div class="cart-form" id="cart-form" style="display:none">
@@ -703,6 +714,15 @@ export function generateMenuHTML(
       });
     });
 
+    // ── HELPERS ──
+    async function fetchWithRetry(url, options) {
+      try { return await fetch(url, options); }
+      catch(e) {
+        await new Promise(function(r) { setTimeout(r, 1500); });
+        return fetch(url, options);
+      }
+    }
+
     // ── PLACE ORDER ──
     async function placeOrder() {
       var lang = getLang();
@@ -736,8 +756,8 @@ export function generateMenuHTML(
       btn.querySelector('.text-en').textContent = 'Processing...';
 
       try {
-        // 1. Create PaymentIntent
-        var piRes = await fetch(PAYMENT_INTENT_URL, {
+        // 1. Create PaymentIntent (retry once on cold start)
+        var piRes = await fetchWithRetry(PAYMENT_INTENT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ amount: total })
@@ -784,27 +804,33 @@ export function generateMenuHTML(
       cart = []; selectedTipCents = 0; tipMode = 'none'; orderType = '';
       saveCart(); updateBadge();
       var lang = getLang();
-      document.querySelector('.cart-scroll').innerHTML =
-        '<div class="order-confirmed">' +
-        '<div class="order-confirmed-icon">✅</div>' +
-        '<div class="order-confirmed-title">' + (lang === 'en' ? 'Order placed, ' + name + '!' : '¡Pedido enviado, ' + name + '!') + '</div>' +
-        '<div class="order-confirmed-id"># ' + orderId + '</div>' +
-        '<div class="order-confirmed-note">' +
-          (lang === 'en' ? 'Your payment was processed. Staff will prepare your order shortly.' :
-          'Tu pago fue procesado. El staff preparará tu orden en breve.') +
-        '</div>' +
-        '<button class="btn-new-order" onclick="resetDrawer()">' +
-          (lang === 'en' ? 'New order' : 'Nueva orden') +
-        '</button></div>';
+      document.getElementById('conf-title').textContent =
+        lang === 'en' ? 'Order placed, ' + name + '!' : '¡Pedido enviado, ' + name + '!';
+      document.getElementById('conf-id').textContent = '# ' + orderId;
+      document.getElementById('conf-note').textContent =
+        lang === 'en' ? 'Your payment was processed. Staff will prepare your order shortly.'
+                      : 'Tu pago fue procesado. El staff preparará tu orden en breve.';
+      document.getElementById('cart-confirmed').style.display = 'block';
+      document.getElementById('cart-main').style.display = 'none';
       document.getElementById('cart-form').style.display = 'none';
     }
 
     function resetDrawer() {
+      document.getElementById('cart-confirmed').style.display = 'none';
+      document.getElementById('cart-main').style.display = 'block';
       renderCartItems(); updateTotals();
-      document.getElementById('cart-form').style.display = cart.length > 0 ? 'block' : 'none';
       var btn = document.getElementById('btn-pay');
-      if (btn) { btn.disabled = false; btn.querySelector('.text-es').textContent = 'Pagar'; btn.querySelector('.text-en').textContent = 'Pay'; }
+      if (btn) {
+        btn.disabled = false;
+        btn.querySelector('.text-es').textContent = 'Pagar';
+        btn.querySelector('.text-en').textContent = 'Pay';
+      }
       document.getElementById('stripe-error').style.display = 'none';
+      orderType = '';
+      document.getElementById('btn-table').classList.remove('selected');
+      document.getElementById('btn-togo').classList.remove('selected');
+      document.getElementById('table-num-wrap').style.display = 'none';
+      document.getElementById('customer-name').value = '';
     }
 
     // ── MODAL ──
