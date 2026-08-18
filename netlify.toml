@@ -3,7 +3,7 @@
   functions = "netlify/functions"
 
 [[redirects]]
-  from = "/api/payment-intent"
+  from = "/api/create-payment-intent"
   to = "/.netlify/functions/create-payment-intent"
   status = 200
   force = true
