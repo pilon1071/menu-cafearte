@@ -1,8 +1,8 @@
 [build]
   publish = "output"
-  functions = "netlify/functions"
 
 [functions]
+  directory = "netlify/functions"
   timeout = 26
 
 [[redirects]]
