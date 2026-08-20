@@ -360,8 +360,11 @@ export function generateMenuHTML(
     .modal-close:hover { color:var(--cream); background:rgba(201,169,97,.22); }
     #modal-name { font-family:var(--display); font-style:italic; font-size:1.55rem; color:var(--cream); line-height:1.15; padding-right:2rem; }
     #modal-base-price { font-size:1rem; font-weight:700; color:var(--gold); margin-top:.3rem; }
-    #modal-description { font-size:.82rem; color:var(--cream-muted); line-height:1.55; margin-top:.4rem; }
+    #modal-desc-toggle { display:inline-flex; align-items:center; gap:4px; margin-top:.5rem; background:none; border:none; color:var(--gold); font-family:var(--ui); font-size:.75rem; font-weight:600; letter-spacing:.06em; cursor:pointer; padding:0; opacity:.85; }
+    #modal-desc-toggle:hover { opacity:1; }
+    #modal-description { font-size:.82rem; color:var(--cream-muted); line-height:1.55; margin-top:.5rem; display:none; }
     #modal-description a { color:var(--gold); text-decoration:underline; text-underline-offset:2px; }
+    #modal-description.open { display:block; }
     #modal-body { padding:1.2rem 1.4rem; flex:1; }
     .modifier-group { margin-bottom:1.4rem; }
     .modifier-group-name { font-size:.7rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:.55rem; display:flex; align-items:center; gap:6px; }
@@ -526,6 +529,9 @@ export function generateMenuHTML(
         <button class="modal-close" id="modal-close-btn" aria-label="Cerrar">✕</button>
         <div id="modal-name"></div>
         <div id="modal-base-price"></div>
+        <button id="modal-desc-toggle" onclick="toggleDesc()" style="display:none">
+          <span id="modal-desc-toggle-text"></span> <span id="modal-desc-arrow">▾</span>
+        </button>
         <div id="modal-description"></div>
       </div>
       <div id="modal-body"></div>
@@ -838,6 +844,18 @@ export function generateMenuHTML(
     var currentItemId = null;
     var selectedMods = {};
 
+    function toggleDesc() {
+      var descEl = document.getElementById('modal-description');
+      var arrow = document.getElementById('modal-desc-arrow');
+      var toggleText = document.getElementById('modal-desc-toggle-text');
+      var lang = getLang();
+      var open = descEl.classList.toggle('open');
+      arrow.textContent = open ? '▴' : '▾';
+      toggleText.textContent = open
+        ? (lang === 'en' ? 'Hide description' : 'Ocultar descripción')
+        : (lang === 'en' ? 'See description' : 'Ver descripción');
+    }
+
     function linkify(text) {
       if (!text) return '';
       return text.replace(/(https?:\\/\\/[^\\s]+)/g, function(url) {
@@ -860,8 +878,16 @@ export function generateMenuHTML(
         currentItem.priceType === 'VARIABLE' ? (lang === 'en' ? 'Variable price' : 'Precio variable') : fmt(currentItem.price);
       var desc = lang === 'en' ? (currentItem.description_en || currentItem.description_es) : currentItem.description_es;
       var descEl = document.getElementById('modal-description');
+      var toggleBtn = document.getElementById('modal-desc-toggle');
       descEl.innerHTML = desc ? linkify(desc) : '';
-      descEl.style.display = desc ? 'block' : 'none';
+      descEl.classList.remove('open');
+      if (desc) {
+        toggleBtn.style.display = 'inline-flex';
+        document.getElementById('modal-desc-toggle-text').textContent = lang === 'en' ? 'See description' : 'Ver descripción';
+        document.getElementById('modal-desc-arrow').textContent = '▾';
+      } else {
+        toggleBtn.style.display = 'none';
+      }
       var body = document.getElementById('modal-body');
       body.innerHTML = '';
       var groups = (currentItem.modifierGroups || []).filter(function(g) { return g.modifiers && g.modifiers.length > 0; });
