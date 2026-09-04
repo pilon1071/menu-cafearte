@@ -155,13 +155,14 @@ exports.handler = async function (event) {
       if (paymentIntentId) paymentPayload.externalReferenceId = paymentIntentId;
 
       const payRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}/payments`, paymentPayload);
-      if (payRes.status !== 200) {
-        console.error("Clover payment registration error:", payRes.body);
-        // Non-fatal: order was created, Stripe payment processed
-      } else {
-        console.log("Clover payment registered:", payRes.body.id);
-      }
+      console.log(`[payment] status=${payRes.status} body=${JSON.stringify(payRes.body)}`);
+    } else {
+      console.log(`[payment] skipped — tenderId=${tenderId} totalCents=${totalCents}`);
     }
+
+    // 5. Explicitly set order state to paid (ensures print trigger even if payment step above fails)
+    const paidRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}`, { state: "paid" });
+    console.log(`[order-state] status=${paidRes.status} body=${JSON.stringify(paidRes.body)}`);
 
     return { statusCode: 200, headers, body: JSON.stringify({ orderId, message: "Orden creada" }) };
   } catch (err) {
