@@ -54,6 +54,8 @@ exports.handler = async function (event) {
 
   const { items, customerName, tableNote, taxCents = 0, serviceFeeCents = 0, tipCents = 0, totalCents = 0, paymentIntentId } = body;
 
+  console.log(`[recv] totalCents=${totalCents} taxCents=${taxCents} serviceFeeCents=${serviceFeeCents} tipCents=${tipCents} items=${Array.isArray(items) ? items.length : 'none'}`);
+
   if (!Array.isArray(items) || items.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Carrito vacío" }) };
   }
@@ -76,29 +78,34 @@ exports.handler = async function (event) {
       cloverFetch("GET", `/v3/merchants/${MID}/tenders`),
     ]);
 
+    // Log raw API responses for debugging
+    console.log(`[order_types] status=${orderTypesRes.status} keys=${JSON.stringify(Object.keys(orderTypesRes.body || {}))}`);
+    console.log(`[tenders] status=${tendersRes.status} keys=${JSON.stringify(Object.keys(tendersRes.body || {}))}`);
+
     // Find an online/pickup/delivery order type
     let orderTypeId = null;
-    if (orderTypesRes.status === 200 && orderTypesRes.body?.elements) {
-      const match = orderTypesRes.body.elements.find((t) =>
+    const otElements = orderTypesRes.body?.elements || orderTypesRes.body?.orderTypes || [];
+    console.log(`[order_types] count=${otElements.length} list=${otElements.map(t => `${t.id}:${t.label||t.labelKey}`).join(", ")}`);
+    if (otElements.length > 0) {
+      const match = otElements.find((t) =>
         /online|web|pickup|delivery|en\s*l[ií]nea/i.test(t.label || t.labelKey || "")
       );
-      if (match) orderTypeId = match.id;
-      else console.log("Order types available:", orderTypesRes.body.elements.map(t => `${t.id}:${t.label}`).join(", "));
+      orderTypeId = match ? match.id : null;
+      console.log(`[order_types] selected=${match ? match.label || match.labelKey : 'none'} id=${orderTypeId}`);
     }
 
     // Find a tender suitable for external/card payments
     let tenderId = null;
-    if (tendersRes.status === 200 && tendersRes.body?.elements) {
-      const tenders = tendersRes.body.elements;
-      // Prefer credit/card/custom/other; avoid cash
+    const tElements = tendersRes.body?.elements || tendersRes.body?.tenders || [];
+    console.log(`[tenders] count=${tElements.length} list=${tElements.map(t => `${t.id}:${t.label||t.labelKey}`).join(", ")}`);
+    if (tElements.length > 0) {
       const match =
-        tenders.find((t) => /credit|card|tarjeta/i.test(t.label || "")) ||
-        tenders.find((t) => /custom|other|otro|extern/i.test(t.label || "")) ||
-        tenders.find((t) => !/cash|efectivo/i.test(t.label || "")) ||
-        tenders[0];
+        tElements.find((t) => /credit|card|tarjeta/i.test(t.label || t.labelKey || "")) ||
+        tElements.find((t) => /custom|other|otro|extern/i.test(t.label || t.labelKey || "")) ||
+        tElements.find((t) => !/cash|efectivo/i.test(t.label || t.labelKey || "")) ||
+        tElements[0];
       if (match) tenderId = match.id;
-      console.log("Tenders available:", tenders.map(t => `${t.id}:${t.label}`).join(", "));
-      console.log("Selected tender:", match?.label, match?.id);
+      console.log(`[tenders] selected=${match ? match.label || match.labelKey : 'none'} id=${tenderId}`);
     }
 
     // 1. Create order (with orderType if found)
