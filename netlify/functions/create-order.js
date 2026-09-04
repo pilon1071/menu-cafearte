@@ -70,12 +70,46 @@ exports.handler = async function (event) {
   noteLines.push(`Total cobrado: ${fmt(totalCents)}`);
 
   try {
-    // 1. Create order
-    const orderRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders`, {
+    // Fetch order types and tenders in parallel
+    const [orderTypesRes, tendersRes] = await Promise.all([
+      cloverFetch("GET", `/v3/merchants/${MID}/order_types`),
+      cloverFetch("GET", `/v3/merchants/${MID}/tenders`),
+    ]);
+
+    // Find an online/pickup/delivery order type
+    let orderTypeId = null;
+    if (orderTypesRes.status === 200 && orderTypesRes.body?.elements) {
+      const match = orderTypesRes.body.elements.find((t) =>
+        /online|web|pickup|delivery|en\s*l[ií]nea/i.test(t.label || t.labelKey || "")
+      );
+      if (match) orderTypeId = match.id;
+      else console.log("Order types available:", orderTypesRes.body.elements.map(t => `${t.id}:${t.label}`).join(", "));
+    }
+
+    // Find a tender suitable for external/card payments
+    let tenderId = null;
+    if (tendersRes.status === 200 && tendersRes.body?.elements) {
+      const tenders = tendersRes.body.elements;
+      // Prefer credit/card/custom/other; avoid cash
+      const match =
+        tenders.find((t) => /credit|card|tarjeta/i.test(t.label || "")) ||
+        tenders.find((t) => /custom|other|otro|extern/i.test(t.label || "")) ||
+        tenders.find((t) => !/cash|efectivo/i.test(t.label || "")) ||
+        tenders[0];
+      if (match) tenderId = match.id;
+      console.log("Tenders available:", tenders.map(t => `${t.id}:${t.label}`).join(", "));
+      console.log("Selected tender:", match?.label, match?.id);
+    }
+
+    // 1. Create order (with orderType if found)
+    const orderPayload = {
       currency: "USD",
       state: "open",
       note: noteLines.join(" | "),
-    });
+    };
+    if (orderTypeId) orderPayload.orderType = { id: orderTypeId };
+
+    const orderRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders`, orderPayload);
 
     if (orderRes.status !== 200) {
       console.error("Clover order error:", orderRes.body);
@@ -105,6 +139,27 @@ exports.handler = async function (event) {
             amount: mod.price,
           });
         }
+      }
+    }
+
+    // 4. Register payment in Clover so order is marked as PAID → triggers auto-print
+    if (tenderId && totalCents > 0) {
+      const paymentPayload = {
+        amount: totalCents,
+        tipAmount: tipCents || 0,
+        taxAmount: taxCents || 0,
+        result: "SUCCESS",
+        tender: { id: tenderId },
+        order: { id: orderId },
+      };
+      if (paymentIntentId) paymentPayload.externalReferenceId = paymentIntentId;
+
+      const payRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}/payments`, paymentPayload);
+      if (payRes.status !== 200) {
+        console.error("Clover payment registration error:", payRes.body);
+        // Non-fatal: order was created, Stripe payment processed
+      } else {
+        console.log("Clover payment registered:", payRes.body.id);
       }
     }
 

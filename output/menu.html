@@ -10,192 +10,379 @@
   <script src="https://js.stripe.com/v3/"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0F2A1F; --surface: #0d2319; --surface2: #122d20;
-      --border: rgba(201,169,97,.18); --gold: #C9A961; --gold-hover: #d9ba73;
-      --cream: #F4EBDD; --cream-muted: rgba(244,235,221,.65); --bean: #0A1A12;
-      --display: 'Instrument Serif','Times New Roman',serif;
-      --ui: 'Manrope',system-ui,-apple-system,sans-serif;
+      --bg: #0F2A1F;
+      --surface: #0d2319;
+      --surface2: #122d20;
+      --border: rgba(201,169,97,.18);
+      --gold: #C9A961;
+      --gold-hover: #d9ba73;
+      --cream: #F4EBDD;
+      --cream-muted: rgba(244,235,221,.65);
+      --bean: #0A1A12;
+      --display: 'Instrument Serif', 'Times New Roman', serif;
+      --ui: 'Manrope', system-ui, -apple-system, sans-serif;
       --radius: 10px;
     }
-    body { background:var(--bg); color:var(--cream); font-family:var(--ui); -webkit-font-smoothing:antialiased; min-height:100vh; }
-    ::selection { background:var(--gold); color:var(--bean); }
-    [data-lang="es"] .text-en { display:none; }
-    [data-lang="en"] .text-es { display:none; }
 
-    /* HEADER */
-    header { background:var(--bean); border-bottom:1px solid var(--border); padding:2.5rem 1rem 2rem; text-align:center; position:relative; }
-    .header-logo-link { display:inline-block; margin-bottom:1.2rem; transition:transform .3s,opacity .3s; }
-    .header-logo-link:hover { transform:scale(1.06); opacity:.88; }
-    .header-logo { width:110px; height:110px; object-fit:contain; display:block; filter:drop-shadow(0 4px 18px rgba(0,0,0,.5)); }
-    .header-eyebrow { font-size:11px; font-weight:500; letter-spacing:.28em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:.5rem; }
-    .header-eyebrow::before,.header-eyebrow::after { content:''; width:28px; height:1px; background:var(--gold); opacity:.6; }
-    header h1 { font-family:var(--display); font-style:italic; font-weight:400; font-size:clamp(2.2rem,6vw,4rem); color:var(--cream); letter-spacing:-0.01em; line-height:1.1; }
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: var(--ui);
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
 
-    /* LANG */
-    .lang-switch { position:absolute; top:1.1rem; right:1.1rem; display:flex; align-items:center; background:rgba(201,169,97,.1); border:1px solid var(--border); border-radius:6px; overflow:hidden; }
-    .lang-btn { background:none; border:none; color:var(--cream-muted); font-family:var(--ui); font-size:11px; font-weight:700; letter-spacing:.1em; padding:.4rem .65rem; cursor:pointer; transition:background .18s,color .18s; }
-    .lang-btn.active { background:var(--gold); color:var(--bean); }
-    .lang-btn:not(.active):hover { color:var(--gold); }
-    .lang-divider { width:1px; height:18px; background:var(--border); }
+    ::selection { background: var(--gold); color: var(--bean); }
 
-    /* NAV */
-    .category-nav { position:sticky; top:0; z-index:10; background:rgba(10,26,18,.92); border-bottom:1px solid var(--border); backdrop-filter:blur(12px); overflow-x:auto; scrollbar-width:none; }
-    .category-nav::-webkit-scrollbar { display:none; }
-    .category-nav__list { display:flex; list-style:none; padding:0 1rem; min-width:max-content; }
-    .category-nav__list a { display:block; padding:.85rem 1.1rem; color:var(--cream-muted); text-decoration:none; font-size:11.5px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; border-bottom:2px solid transparent; transition:color .2s,border-color .2s; }
-    .category-nav__list a:hover { color:var(--gold); border-bottom-color:var(--gold); }
+    [data-lang="es"] .text-en { display: none; }
+    [data-lang="en"] .text-es { display: none; }
 
-    /* MAIN */
-    main { max-width:980px; margin:0 auto; padding:2.5rem 1rem 8rem; }
-    .menu-section { margin-bottom:3.5rem; }
-    .category-title { font-family:var(--display); font-style:italic; font-weight:400; font-size:clamp(1.6rem,3.5vw,2.2rem); color:var(--cream); margin-bottom:1.25rem; padding-bottom:.75rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:.75rem; }
-    .category-title::after { content:''; flex:1; height:1px; background:var(--gold); opacity:.25; }
+    /* ── HEADER ── */
+    header {
+      background: var(--bean);
+      border-bottom: 1px solid var(--border);
+      padding: 2.5rem 1rem 2rem;
+      text-align: center;
+      position: relative;
+    }
 
-    /* GRID */
-    .items-grid { display:grid; grid-template-columns:1fr; gap:.65rem; }
-    @media(min-width:600px) { .items-grid { grid-template-columns:repeat(2,1fr); gap:.85rem; } }
-    @media(min-width:880px) { .items-grid { grid-template-columns:repeat(3,1fr); } }
+    .header-logo-link {
+      display: inline-block;
+      margin-bottom: 1.2rem;
+      transition: transform .3s, opacity .3s;
+    }
+    .header-logo-link:hover { transform: scale(1.06); opacity: .88; }
+    .header-logo { width: 110px; height: 110px; object-fit: contain; display: block; filter: drop-shadow(0 4px 18px rgba(0,0,0,.5)); }
 
-    /* ITEM CARD */
-    .menu-item { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:1rem 1.15rem; display:flex; gap:0; align-items:flex-start; transition:border-color .25s,transform .25s,gap .25s; position:relative; }
-    .menu-item.has-modifiers { cursor:pointer; }
-    .menu-item:hover { border-color:rgba(201,169,97,.5); transform:translateY(-2px); gap:.9rem; }
-    .item-image { width:72px; height:72px; object-fit:cover; border-radius:7px; flex-shrink:0; max-width:0; opacity:0; overflow:hidden; transition:max-width .3s,opacity .3s; }
-    .menu-item:hover .item-image { max-width:72px; opacity:1; }
-    .item-info { flex:1; min-width:0; }
-    .item-header { display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; }
-    .item-name { font-size:.95rem; font-weight:600; color:var(--cream); line-height:1.3; }
-    .price { font-size:.9rem; font-weight:700; color:var(--gold); white-space:nowrap; flex-shrink:0; }
-    .description { max-height:0; overflow:hidden; opacity:0; margin-top:0; color:var(--cream-muted); font-size:.8rem; line-height:1.5; transition:max-height .3s,opacity .3s,margin-top .3s; }
-    .menu-item:hover .description { max-height:120px; opacity:1; margin-top:.3rem; }
-    .desc-link { color:var(--gold); text-decoration:underline; text-underline-offset:2px; }
-    .modifier-hint { display:inline-flex; align-items:center; gap:4px; margin-top:.45rem; font-size:.7rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); opacity:0; transition:opacity .25s; }
-    .modifier-hint::before { content:'✦'; font-size:.55rem; }
-    .menu-item:hover .modifier-hint { opacity:1; }
+    .header-eyebrow {
+      font-size: 11px; font-weight: 500; letter-spacing: .28em; text-transform: uppercase;
+      color: var(--gold); display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 0.5rem;
+    }
+    .header-eyebrow::before, .header-eyebrow::after { content: ''; width: 28px; height: 1px; background: var(--gold); opacity: .6; }
 
-    /* QUICK ADD */
-    .quick-add-btn { position:absolute; bottom:.75rem; right:.75rem; width:30px; height:30px; border-radius:50%; background:var(--gold); color:var(--bean); border:none; font-size:1.3rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transform:scale(0.7); transition:opacity .2s,transform .2s,background .2s; }
-    .menu-item:hover .quick-add-btn { opacity:1; transform:scale(1); }
-    .quick-add-btn:hover { background:var(--gold-hover); }
-    .quick-add-btn:active { transform:scale(0.92); }
+    header h1 {
+      font-family: var(--display); font-style: italic; font-weight: 400;
+      font-size: clamp(2.2rem, 6vw, 4rem); color: var(--cream); letter-spacing: -0.01em; line-height: 1.1;
+    }
 
-    /* CART FAB */
-    .cart-fab { position:fixed; bottom:1.5rem; right:1.5rem; z-index:100; display:none; align-items:center; gap:.6rem; background:var(--gold); color:var(--bean); border:none; border-radius:50px; padding:.75rem 1.2rem; font-family:var(--ui); font-size:.85rem; font-weight:700; cursor:pointer; box-shadow:0 4px 20px rgba(0,0,0,.4); transition:background .2s,transform .2s; }
-    .cart-fab:hover { background:var(--gold-hover); transform:translateY(-2px); }
-    .cart-fab-count { background:var(--bean); color:var(--gold); border-radius:50px; padding:1px 7px; font-size:.75rem; font-weight:700; }
+    /* ── LANG SWITCH ── */
+    .lang-switch {
+      position: absolute; top: 1.1rem; right: 1.1rem;
+      display: flex; align-items: center; gap: 0;
+      background: rgba(201,169,97,.1); border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+    }
+    .lang-btn {
+      background: none; border: none; color: var(--cream-muted);
+      font-family: var(--ui); font-size: 11px; font-weight: 700; letter-spacing: .1em;
+      padding: 0.4rem 0.65rem; cursor: pointer; transition: background .18s, color .18s;
+    }
+    .lang-btn.active { background: var(--gold); color: var(--bean); }
+    .lang-btn:not(.active):hover { color: var(--gold); }
+    .lang-divider { width: 1px; height: 18px; background: var(--border); }
 
-    /* CART OVERLAY */
-    .cart-overlay { display:none; position:fixed; inset:0; background:rgba(10,26,18,.6); backdrop-filter:blur(4px); z-index:150; }
-    .cart-overlay.open { display:block; }
+    /* ── NAV ── */
+    .category-nav {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(10,26,18,.92); border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .category-nav::-webkit-scrollbar { display: none; }
+    .category-nav__list { display: flex; list-style: none; padding: 0 1rem; min-width: max-content; }
+    .category-nav__list a {
+      display: block; padding: 0.85rem 1.1rem; color: var(--cream-muted);
+      text-decoration: none; font-size: 11.5px; font-weight: 600; letter-spacing: .12em;
+      text-transform: uppercase; white-space: nowrap;
+      border-bottom: 2px solid transparent; transition: color .2s, border-color .2s;
+    }
+    .category-nav__list a:hover { color: var(--gold); border-bottom-color: var(--gold); }
 
-    /* CART DRAWER */
-    .cart-drawer { position:fixed; top:0; right:0; bottom:0; z-index:160; width:min(440px,100vw); background:#0b1f14; border-left:1px solid var(--border); display:flex; flex-direction:column; transform:translateX(100%); transition:transform .3s cubic-bezier(.2,.6,.2,1); }
-    .cart-drawer.open { transform:translateX(0); }
-    .cart-drawer-header { padding:1.4rem 1.4rem 1rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
-    .cart-drawer-title { font-family:var(--display); font-style:italic; font-weight:400; font-size:1.6rem; color:var(--cream); }
-    .cart-close-btn { background:rgba(201,169,97,.1); border:1px solid var(--border); border-radius:50%; width:32px; height:32px; color:var(--cream-muted); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:color .2s,background .2s; }
-    .cart-close-btn:hover { color:var(--cream); background:rgba(201,169,97,.2); }
+    /* ── MAIN ── */
+    main { max-width: 980px; margin: 0 auto; padding: 2.5rem 1rem 8rem; }
 
-    .cart-scroll { flex:1; overflow-y:auto; }
-    .cart-scroll::-webkit-scrollbar { width:3px; }
-    .cart-scroll::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    .menu-section { margin-bottom: 3.5rem; }
 
-    .cart-items-list { padding:.75rem 1.4rem 0; }
-    .cart-empty { text-align:center; padding:3rem 1rem; color:var(--cream-muted); font-size:.9rem; }
-    .cart-empty-icon { font-size:2.5rem; margin-bottom:.75rem; }
-    .cart-item { display:flex; align-items:center; gap:.75rem; padding:.85rem 0; border-bottom:1px solid var(--border); }
-    .cart-item:last-child { border-bottom:none; }
-    .cart-item-main { flex:1; min-width:0; }
-    .cart-item-name { font-size:.9rem; font-weight:600; color:var(--cream); }
-    .cart-item-mods { font-size:.75rem; color:var(--cream-muted); margin-top:2px; line-height:1.4; }
-    .cart-item-price { font-size:.82rem; font-weight:700; color:var(--gold); margin-top:3px; }
-    .cart-qty { display:flex; align-items:center; gap:.4rem; flex-shrink:0; }
-    .cart-qty button { width:26px; height:26px; border-radius:50%; background:rgba(201,169,97,.12); border:1px solid var(--border); color:var(--cream); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background .15s; }
-    .cart-qty button:hover { background:rgba(201,169,97,.25); }
-    .cart-qty span { font-size:.9rem; font-weight:700; min-width:18px; text-align:center; }
+    .category-title {
+      font-family: var(--display); font-style: italic; font-weight: 400;
+      font-size: clamp(1.6rem, 3.5vw, 2.2rem); color: var(--cream);
+      margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .category-title::after { content: ''; flex: 1; height: 1px; background: var(--gold); opacity: .25; }
 
-    /* TOTALS */
-    .cart-totals { padding:.75rem 1.4rem; border-top:1px solid var(--border); margin-top:.5rem; }
-    .totals-row { display:flex; justify-content:space-between; align-items:center; padding:.22rem 0; font-size:.82rem; color:var(--cream-muted); }
-    .totals-row span:last-child { font-weight:600; color:var(--cream); }
-    .totals-divider { height:1px; background:var(--border); margin:.6rem 0; }
-    .totals-total-row { font-size:1rem !important; }
-    .totals-total-row span { color:var(--cream) !important; font-weight:700 !important; }
-    .totals-total-row span:last-child { color:var(--gold) !important; font-size:1.2rem; }
+    /* ── GRID ── */
+    .items-grid { display: grid; grid-template-columns: 1fr; gap: 0.65rem; }
+    @media (min-width: 600px) { .items-grid { grid-template-columns: repeat(2, 1fr); gap: 0.85rem; } }
+    @media (min-width: 880px) { .items-grid { grid-template-columns: repeat(3, 1fr); } }
 
-    /* TIP */
-    .tip-section { padding:.6rem 0 .4rem; }
-    .tip-label { font-size:.7rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); margin-bottom:.5rem; }
-    .tip-buttons { display:grid; grid-template-columns:repeat(3,1fr); gap:.35rem; margin-bottom:.5rem; }
-    .tip-btn { padding:.42rem .3rem; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:7px; color:var(--cream-muted); font-family:var(--ui); font-size:.78rem; font-weight:600; cursor:pointer; transition:border-color .15s,background .15s,color .15s; }
-    .tip-btn:hover { border-color:rgba(201,169,97,.4); color:var(--cream); }
-    .tip-btn.selected { border-color:var(--gold); background:rgba(201,169,97,.13); color:var(--gold); }
+    /* ── ITEM CARD ── */
+    .menu-item {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1rem 1.15rem; display: flex; gap: 0; align-items: flex-start;
+      transition: border-color .25s, transform .25s, gap .25s; position: relative;
+    }
+    .menu-item.has-modifiers { cursor: pointer; }
+    .menu-item:hover { border-color: rgba(201,169,97,.5); transform: translateY(-2px); gap: 0.9rem; }
 
-    /* CHECKOUT FORM */
-    .cart-form { padding:.75rem 1.4rem 1.6rem; border-top:1px solid var(--border); flex-shrink:0; background:#0b1f14; }
-    .form-input { width:100%; padding:.65rem .85rem; margin-bottom:.65rem; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; color:var(--cream); font-family:var(--ui); font-size:.84rem; outline:none; }
-    .form-input:focus { border-color:rgba(201,169,97,.5); }
-    .form-input::placeholder { color:var(--cream-muted); }
-    .order-type-row { display:flex; gap:.6rem; margin-bottom:.65rem; }
-    .order-type-btn { flex:1; padding:.55rem; background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; color:var(--cream-muted); font-family:var(--ui); font-size:.8rem; font-weight:600; cursor:pointer; transition:border-color .15s,background .15s,color .15s; }
-    .order-type-btn.selected { border-color:var(--gold); background:rgba(201,169,97,.1); color:var(--gold); }
-    .stripe-card-wrap { background:rgba(255,255,255,.04); border:1px solid var(--border); border-radius:8px; padding:.7rem .85rem; margin-bottom:.65rem; transition:border-color .15s; }
-    .stripe-card-wrap:focus-within { border-color:rgba(201,169,97,.5); }
-    .stripe-error { font-size:.75rem; color:#ff6b6b; margin-bottom:.5rem; }
-    .btn-pay { display:flex; align-items:center; justify-content:center; gap:.5rem; width:100%; padding:.85rem 1rem; background:var(--gold); color:var(--bean); border:none; border-radius:10px; font-family:var(--ui); font-size:.9rem; font-weight:700; letter-spacing:.06em; cursor:pointer; transition:background .2s,transform .2s; }
-    .btn-pay:hover { background:var(--gold-hover); transform:translateY(-1px); }
-    .btn-pay:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    .item-image {
+      width: 72px; height: 72px; object-fit: cover; border-radius: 7px; flex-shrink: 0;
+      max-width: 0; opacity: 0; overflow: hidden; transition: max-width .3s ease, opacity .3s ease;
+    }
+    .menu-item:hover .item-image { max-width: 72px; opacity: 1; }
 
-    /* CONFIRMATION */
-    .order-confirmed { text-align:center; padding:3rem 1.4rem; }
-    .order-confirmed-icon { font-size:2.5rem; margin-bottom:1rem; }
-    .order-confirmed-title { color:var(--cream); font-size:1rem; font-weight:700; margin-bottom:.4rem; }
-    .order-confirmed-id { font-family:var(--display); font-style:italic; font-size:.9rem; color:var(--gold); margin-bottom:.75rem; }
-    .order-confirmed-note { font-size:.8rem; color:var(--cream-muted); line-height:1.5; }
-    .btn-new-order { margin-top:1.4rem; padding:.6rem 1.4rem; background:rgba(201,169,97,.12); border:1px solid var(--border); border-radius:8px; color:var(--gold); font-family:var(--ui); font-size:.8rem; font-weight:600; cursor:pointer; transition:background .18s; }
-    .btn-new-order:hover { background:rgba(201,169,97,.22); }
+    .item-info { flex: 1; min-width: 0; }
 
-    /* FOOTER */
-    footer { text-align:center; color:var(--cream-muted); font-size:.72rem; letter-spacing:.08em; padding:2rem 1rem; border-top:1px solid var(--border); }
+    .item-header { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; }
 
-    /* MODAL */
-    #modal-overlay { display:none; position:fixed; inset:0; background:rgba(10,26,18,.82); backdrop-filter:blur(10px); z-index:200; align-items:center; justify-content:center; padding:1rem; }
-    #modal-overlay.open { display:flex; }
-    #modal { background:#0e2518; border:1px solid rgba(201,169,97,.28); border-radius:16px; width:100%; max-width:460px; max-height:88vh; overflow-y:auto; position:relative; display:flex; flex-direction:column; }
-    #modal::-webkit-scrollbar { width:4px; }
-    #modal::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
-    #modal-image-wrap { flex-shrink:0; overflow:hidden; border-radius:15px 15px 0 0; }
-    #modal-image { width:100%; height:200px; object-fit:cover; display:block; }
-    #modal-header { padding:1.4rem 1.4rem 1rem; position:sticky; top:0; background:#0e2518; z-index:1; border-bottom:1px solid var(--border); }
-    .modal-close { position:absolute; top:1rem; right:1rem; background:rgba(201,169,97,.12); border:1px solid var(--border); border-radius:50%; width:30px; height:30px; color:var(--cream-muted); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:color .2s,background .2s; }
-    .modal-close:hover { color:var(--cream); background:rgba(201,169,97,.22); }
-    #modal-name { font-family:var(--display); font-style:italic; font-size:1.55rem; color:var(--cream); line-height:1.15; padding-right:2rem; }
-    #modal-base-price { font-size:1rem; font-weight:700; color:var(--gold); margin-top:.3rem; }
-    #modal-desc-toggle { display:inline-flex; align-items:center; gap:5px; margin-top:.6rem; background:rgba(212,175,55,.1); border:1px solid rgba(212,175,55,.35); border-radius:20px; color:var(--gold); font-family:var(--ui); font-size:.78rem; font-weight:700; letter-spacing:.05em; cursor:pointer; padding:.25rem .7rem; opacity:1; transition:background .2s,border-color .2s; }
-    #modal-desc-toggle:hover { background:rgba(212,175,55,.2); border-color:rgba(212,175,55,.6); }
-    #modal-description { font-size:.82rem; color:var(--cream-muted); line-height:1.55; margin-top:.5rem; display:none; }
-    #modal-description a { color:var(--gold); text-decoration:underline; text-underline-offset:2px; }
-    #modal-description.open { display:block; }
-    #modal-body { padding:1.2rem 1.4rem; flex:1; }
-    .modifier-group { margin-bottom:1.4rem; }
-    .modifier-group-name { font-size:.7rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:.55rem; display:flex; align-items:center; gap:6px; }
-    .req-badge { font-size:.6rem; font-weight:600; letter-spacing:.06em; background:rgba(201,169,97,.15); border:1px solid rgba(201,169,97,.3); border-radius:4px; padding:1px 5px; color:var(--gold); text-transform:uppercase; }
-    .modifier-options { display:flex; flex-direction:column; gap:.4rem; }
-    .modifier-btn { display:flex; justify-content:space-between; align-items:center; padding:.7rem 1rem; background:rgba(255,255,255,.03); border:1px solid var(--border); border-radius:8px; color:var(--cream); font-family:var(--ui); font-size:.875rem; cursor:pointer; transition:border-color .18s,background .18s; text-align:left; width:100%; gap:.75rem; }
-    .modifier-btn:hover { border-color:rgba(201,169,97,.45); background:rgba(201,169,97,.06); }
-    .modifier-btn.selected { border-color:var(--gold); background:rgba(201,169,97,.13); }
-    .modifier-btn .mod-name { flex:1; }
-    .mod-check { width:18px; height:18px; border:1.5px solid var(--border); border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.65rem; color:transparent; transition:border-color .18s,background .18s; }
-    .modifier-btn.selected .mod-check { border-color:var(--gold); background:var(--gold); color:var(--bean); }
-    .modifier-price { font-size:.8rem; font-weight:600; color:var(--cream-muted); white-space:nowrap; flex-shrink:0; }
-    .modifier-btn.selected .modifier-price { color:var(--gold); }
-    #modal-footer { padding:1rem 1.4rem 1.4rem; border-top:1px solid var(--border); position:sticky; bottom:0; background:#0e2518; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
-    .total-block { display:flex; flex-direction:column; }
-    .total-label { font-size:.65rem; font-weight:600; letter-spacing:.18em; text-transform:uppercase; color:var(--cream-muted); }
-    #modal-total { font-family:var(--display); font-style:italic; font-size:2rem; color:var(--gold); line-height:1; }
-    .btn-add-to-cart { padding:.7rem 1.2rem; background:var(--gold); color:var(--bean); border:none; border-radius:8px; font-family:var(--ui); font-size:.8rem; font-weight:700; letter-spacing:.08em; cursor:pointer; transition:background .2s,transform .2s; white-space:nowrap; }
-    .btn-add-to-cart:hover { background:var(--gold-hover); transform:translateY(-1px); }
+    .item-name { font-size: 0.95rem; font-weight: 600; color: var(--cream); line-height: 1.3; }
+
+    .price { font-size: 0.9rem; font-weight: 700; color: var(--gold); white-space: nowrap; flex-shrink: 0; }
+
+    .description {
+      max-height: 0; overflow: hidden; opacity: 0; margin-top: 0;
+      color: var(--cream-muted); font-size: 0.8rem; line-height: 1.5;
+      transition: max-height .3s ease, opacity .3s ease, margin-top .3s ease;
+    }
+    .menu-item:hover .description { max-height: 120px; opacity: 1; margin-top: 0.3rem; }
+
+    .desc-link { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+    .desc-link:hover { color: var(--gold-hover); }
+
+    .modifier-hint {
+      display: inline-flex; align-items: center; gap: 4px; margin-top: 0.45rem;
+      font-size: 0.7rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--gold); opacity: 0; transition: opacity .25s;
+    }
+    .modifier-hint::before { content: '✦'; font-size: 0.55rem; }
+    .menu-item:hover .modifier-hint { opacity: 1; }
+
+    /* ── QUICK ADD BUTTON ── */
+    .quick-add-btn {
+      position: absolute; bottom: 0.75rem; right: 0.75rem;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--gold); color: var(--bean);
+      border: none; font-size: 1.3rem; font-weight: 400; line-height: 1;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: scale(0.7);
+      transition: opacity .2s, transform .2s, background .2s;
+    }
+    .menu-item:hover .quick-add-btn { opacity: 1; transform: scale(1); }
+    .quick-add-btn:hover { background: var(--gold-hover); }
+    .quick-add-btn:active { transform: scale(0.92); }
+
+    /* ── CART FAB ── */
+    .cart-fab {
+      position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 100;
+      display: none; align-items: center; gap: 0.6rem;
+      background: var(--gold); color: var(--bean);
+      border: none; border-radius: 50px; padding: 0.75rem 1.2rem;
+      font-family: var(--ui); font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,.4);
+      transition: background .2s, transform .2s;
+    }
+    .cart-fab:hover { background: var(--gold-hover); transform: translateY(-2px); }
+    .cart-fab-icon { font-size: 1.1rem; }
+    .cart-fab-count {
+      background: var(--bean); color: var(--gold);
+      border-radius: 50px; padding: 1px 7px; font-size: 0.75rem; font-weight: 700;
+    }
+    .cart-fab-total { font-size: 0.9rem; }
+
+    /* ── CART OVERLAY ── */
+    .cart-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(10,26,18,.6);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 150;
+    }
+    .cart-overlay.open { display: block; }
+
+    /* ── CART DRAWER ── */
+    .cart-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 160;
+      width: min(420px, 100vw); background: #0b1f14;
+      border-left: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform .3s cubic-bezier(.2,.6,.2,1);
+    }
+    .cart-drawer.open { transform: translateX(0); }
+
+    .cart-drawer-header {
+      padding: 1.4rem 1.4rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .cart-drawer-title {
+      font-family: var(--display); font-style: italic; font-weight: 400;
+      font-size: 1.6rem; color: var(--cream);
+    }
+    .cart-close-btn {
+      background: rgba(201,169,97,.1); border: 1px solid var(--border);
+      border-radius: 50%; width: 32px; height: 32px; color: var(--cream-muted);
+      cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;
+      transition: color .2s, background .2s;
+    }
+    .cart-close-btn:hover { color: var(--cream); background: rgba(201,169,97,.2); }
+
+    .cart-items-list { flex: 1; overflow-y: auto; padding: 1rem 1.4rem; }
+    .cart-items-list::-webkit-scrollbar { width: 3px; }
+    .cart-items-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .cart-empty {
+      text-align: center; padding: 3rem 1rem;
+      color: var(--cream-muted); font-size: 0.9rem;
+    }
+    .cart-empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+    .cart-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.85rem 0; border-bottom: 1px solid var(--border);
+    }
+    .cart-item:last-child { border-bottom: none; }
+
+    .cart-item-main { flex: 1; min-width: 0; }
+    .cart-item-name { font-size: 0.9rem; font-weight: 600; color: var(--cream); }
+    .cart-item-mods { font-size: 0.75rem; color: var(--cream-muted); margin-top: 2px; line-height: 1.4; }
+    .cart-item-price { font-size: 0.82rem; font-weight: 700; color: var(--gold); margin-top: 3px; }
+
+    .cart-qty {
+      display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;
+    }
+    .cart-qty button {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: rgba(201,169,97,.12); border: 1px solid var(--border);
+      color: var(--cream); font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .cart-qty button:hover { background: rgba(201,169,97,.25); }
+    .cart-qty span { font-size: 0.9rem; font-weight: 700; min-width: 18px; text-align: center; color: var(--cream); }
+
+    .cart-drawer-footer {
+      padding: 1.2rem 1.4rem 1.6rem;
+      border-top: 1px solid var(--border); flex-shrink: 0; background: #0b1f14;
+    }
+    .cart-total-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 0.4rem;
+    }
+    .cart-total-label { font-size: 0.72rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--cream-muted); }
+    .cart-total-amount { font-family: var(--display); font-style: italic; font-size: 2rem; color: var(--gold); line-height: 1; }
+
+    .cart-note {
+      font-size: 0.72rem; color: var(--cream-muted); line-height: 1.5;
+      margin-bottom: 1rem; text-align: center;
+    }
+
+    .checkout-label {
+      display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: .18em;
+      text-transform: uppercase; color: var(--cream-muted); margin-bottom: 0.35rem;
+    }
+    .checkout-input {
+      width: 100%; padding: 0.65rem 0.85rem; margin-bottom: 0.85rem;
+      background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--cream); font-family: var(--ui); font-size: 0.85rem; outline: none;
+    }
+    .checkout-input:focus { border-color: rgba(201,169,97,.5); }
+    .checkout-input::placeholder { color: var(--cream-muted); }
+
+    .order-type-toggle { display: flex; gap: 0.5rem; margin-bottom: 0.85rem; }
+    .order-type-btn {
+      flex: 1; padding: 0.6rem 0.5rem; border-radius: 8px; cursor: pointer;
+      background: rgba(255,255,255,.04); border: 1px solid var(--border);
+      color: var(--cream-muted); font-family: var(--ui); font-size: 0.82rem; font-weight: 600;
+      transition: all .18s;
+    }
+    .order-type-btn.active { background: rgba(201,169,97,.15); border-color: var(--gold); color: var(--gold); }
+
+    .stripe-card-wrap {
+      padding: 0.75rem 0.85rem; margin-bottom: 0.6rem;
+      background: rgba(255,255,255,.04); border: 1px solid var(--border); border-radius: 8px;
+    }
+    .stripe-error { color: #ff6b6b; font-size: 0.78rem; margin-bottom: 0.65rem; display: none; }
+
+    .order-confirmed { text-align: center; padding: 3rem 1.4rem; }
+    .order-confirmed-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .order-confirmed-title { color: var(--cream); font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .order-confirmed-id { font-family: var(--display); font-style: italic; font-size: 0.9rem; color: var(--gold); margin-bottom: 0.75rem; }
+    .order-confirmed-note { font-size: 0.8rem; color: var(--cream-muted); line-height: 1.5; }
+    .btn-new-order {
+      margin-top: 1.4rem; padding: 0.6rem 1.4rem;
+      background: rgba(201,169,97,.12); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--gold); font-family: var(--ui); font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: background .18s;
+    }
+    .btn-new-order:hover { background: rgba(201,169,97,.22); }
+
+    .btn-checkout {
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      width: 100%; padding: 0.85rem 1rem;
+      background: var(--gold); color: var(--bean); border: none; border-radius: 10px;
+      font-family: var(--ui); font-size: 0.9rem; font-weight: 700; letter-spacing: .06em;
+      cursor: pointer; transition: background .2s, transform .2s;
+    }
+    .btn-checkout:hover { background: var(--gold-hover); transform: translateY(-1px); }
+    .btn-checkout:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* ── FOOTER ── */
+    footer { text-align: center; color: var(--cream-muted); font-size: 0.72rem; letter-spacing: .08em; padding: 2rem 1rem; border-top: 1px solid var(--border); }
+
+    /* ── MODAL ── */
+    #modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(10,26,18,.82); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      z-index: 200; align-items: center; justify-content: center; padding: 1rem;
+    }
+    #modal-overlay.open { display: flex; }
+
+    #modal {
+      background: #0e2518; border: 1px solid rgba(201,169,97,.28); border-radius: 16px;
+      width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
+      position: relative; display: flex; flex-direction: column;
+    }
+    #modal::-webkit-scrollbar { width: 4px; }
+    #modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    #modal-image-wrap { flex-shrink: 0; overflow: hidden; border-radius: 15px 15px 0 0; }
+    #modal-image { width: 100%; height: 200px; object-fit: cover; display: block; }
+
+    #modal-header {
+      padding: 1.4rem 1.4rem 1rem; position: sticky; top: 0; background: #0e2518; z-index: 1;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: rgba(201,169,97,.12); border: 1px solid var(--border); border-radius: 50%; width: 30px; height: 30px; color: var(--cream-muted); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: color .2s, background .2s; }
+    .modal-close:hover { color: var(--cream); background: rgba(201,169,97,.22); }
+
+    #modal-name { font-family: var(--display); font-style: italic; font-size: 1.55rem; color: var(--cream); line-height: 1.15; padding-right: 2rem; }
+    #modal-base-price { font-size: 1rem; font-weight: 700; color: var(--gold); margin-top: 0.3rem; }
+    #modal-description { font-size: 0.82rem; color: var(--cream-muted); line-height: 1.55; margin-top: 0.4rem; }
+    #modal-description a { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+
+    #modal-body { padding: 1.2rem 1.4rem; flex: 1; }
+
+    .modifier-group { margin-bottom: 1.4rem; }
+    .modifier-group-name { font-size: 0.7rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.55rem; display: flex; align-items: center; gap: 6px; }
+    .req-badge { font-size: 0.6rem; font-weight: 600; letter-spacing: .06em; background: rgba(201,169,97,.15); border: 1px solid rgba(201,169,97,.3); border-radius: 4px; padding: 1px 5px; color: var(--gold); text-transform: uppercase; }
+    .modifier-options { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    .modifier-btn { display: flex; justify-content: space-between; align-items: center; padding: 0.7rem 1rem; background: rgba(255,255,255,.03); border: 1px solid var(--border); border-radius: 8px; color: var(--cream); font-family: var(--ui); font-size: 0.875rem; cursor: pointer; transition: border-color .18s, background .18s; text-align: left; width: 100%; gap: 0.75rem; }
+    .modifier-btn:hover { border-color: rgba(201,169,97,.45); background: rgba(201,169,97,.06); }
+    .modifier-btn.selected { border-color: var(--gold); background: rgba(201,169,97,.13); }
+    .modifier-btn .mod-name { flex: 1; }
+    .mod-check { width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: transparent; transition: border-color .18s, background .18s; }
+    .modifier-btn.selected .mod-check { border-color: var(--gold); background: var(--gold); color: var(--bean); }
+    .modifier-price { font-size: 0.8rem; font-weight: 600; color: var(--cream-muted); white-space: nowrap; flex-shrink: 0; }
+    .modifier-btn.selected .modifier-price { color: var(--gold); }
+
+    #modal-footer { padding: 1rem 1.4rem 1.4rem; border-top: 1px solid var(--border); position: sticky; bottom: 0; background: #0e2518; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+
+    .total-block { display: flex; flex-direction: column; }
+    .total-label { font-size: 0.65rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--cream-muted); }
+    #modal-total { font-family: var(--display); font-style: italic; font-size: 2rem; color: var(--gold); line-height: 1; }
+
+    .btn-add-to-cart { padding: 0.7rem 1.2rem; background: var(--gold); color: var(--bean); border: none; border-radius: 8px; font-family: var(--ui); font-size: 0.8rem; font-weight: 700; letter-spacing: .08em; cursor: pointer; transition: background .2s, transform .2s; white-space: nowrap; }
+    .btn-add-to-cart:hover { background: var(--gold-hover); transform: translateY(-1px); }
   </style>
 </head>
 <body>
@@ -209,7 +396,8 @@
       <img class="header-logo" src="logo.png" alt="CAFEARTE" />
     </a>
     <div class="header-eyebrow">
-      <span class="text-es">Menú</span><span class="text-en">Menu</span>
+      <span class="text-es">Menú</span>
+      <span class="text-en">Menu</span>
     </div>
     <h1>CAFEARTE</h1>
   </header>
@@ -224,6 +412,7 @@
     <section class="menu-section" id="cat-cafe">
       <h2 class="category-title">CAFE</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="P8XZWKHS83VBT">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/P8XZWKHS83VBT.jpeg?v=1782603330241" alt="Americano" loading="lazy" />
       <div class="item-info">
@@ -342,11 +531,13 @@ Drip Coffee is ideal for those seeking simple, aromatic and honest coffee: a war
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-te">
       <h2 class="category-title">TE</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="D81KMZ44KDG94">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/D81KMZ44KDG94.jpeg?v=1782617341057" alt="Earl Grey" loading="lazy" />
       <div class="item-info">
@@ -490,11 +681,13 @@ An ideal cup to enjoy slowly, pamper yourself and feel that warmth of home in ev
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-tisana-herbal">
       <h2 class="category-title">TISANA HERBAL</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="TGBF32RGX9PH0">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/TGBF32RGX9PH0.jpeg?v=1782617894669" alt="Zero Stress" loading="lazy" />
       <div class="item-info">
@@ -544,11 +737,13 @@ A cup designed to breathe deeply, relax and enjoy a moment of serenity with each
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-tisana-frutal">
       <h2 class="category-title">TISANA FRUTAL</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="K5PAP1BW86C32">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/K5PAP1BW86C32.jpeg?v=1782659724056" alt="CARIBBEAN FRUIT" loading="lazy" />
       <div class="item-info">
@@ -652,11 +847,13 @@ An elegant, fresh and full-of-personality drink that evokes the atmosphere of Is
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-moon-milk">
       <h2 class="category-title">MOON MILK</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="V5NH9D1DGCDG0">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/V5NH9D1DGCDG0.jpeg?v=1782661804357" alt="Golden Leaf" loading="lazy" />
       <div class="item-info">
@@ -694,11 +891,13 @@ A cup inspired by the magic of Eastern nights: warm, nutritious and special for 
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-especialidades">
       <h2 class="category-title">ESPECIALIDADES</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="8XNYA2JVB955Y">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/8XNYA2JVB955Y.jpeg?v=1782603586281" alt="Choco Frog" loading="lazy" />
       <div class="item-info">
@@ -952,11 +1151,13 @@ An indulgent, chocolatey and very Mexican latte: ideal for enjoying hot, creamy 
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-crepas">
       <h2 class="category-title">CREPAS</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="AWPEY955KWAE2">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/AWPEY955KWAE2.jpeg?v=1782696313499" alt="CRESPAGUETI" loading="lazy" />
       <div class="item-info">
@@ -994,11 +1195,13 @@ More than a dessert, crepes are an experience prepared fresh: warm, aromatic, pe
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-desserts">
       <h2 class="category-title">DESSERTS</h2>
       <div class="items-grid">
+        
     <div class="menu-item" data-item-id="H0531PN181FX2">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/H0531PN181FX2.jpeg?v=1782696810662" alt="YOGURT PARFAITS" loading="lazy" />
       <div class="item-info">
@@ -1207,11 +1410,13 @@ Although strawberries with cream are enjoyed in many places around the world, in
 A fresh, sweet and creamy classic that is always enjoyed with joy.</p>
       </div>
       <button class="quick-add-btn" data-item-id="C16S46VCRDZ26" aria-label="Agregar">+</button>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-bebidas">
       <h2 class="category-title">BEBIDAS</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="D6FG8SZTFQX1A">
       
       <div class="item-info">
@@ -1356,11 +1561,13 @@ Its clean and light flavor makes it a perfect beverage for everyone: simple, pra
 A basic, natural and refreshing beverage that should never be missing from the menu.</p>
       </div>
       <button class="quick-add-btn" data-item-id="K0ESSV0V2PTQ2" aria-label="Agregar">+</button>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-sandwiches-y-mas">
       <h2 class="category-title">SANDWICHES  Y MAS</h2>
       <div class="items-grid">
+        
     <div class="menu-item" data-item-id="VAWTJKXR9X7ET">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/VAWTJKXR9X7ET.jpeg?v=1782827638986" alt="TACOS DE HARINA" loading="lazy" />
       <div class="item-info">
@@ -1460,11 +1667,13 @@ Ideal for starting the day with something savory, freshly prepared and perfect t
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-eventos">
       <h2 class="category-title">Eventos</h2>
       <div class="items-grid">
+        
     <div class="menu-item" data-item-id="12S9FPF3V4G0M">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/12S9FPF3V4G0M.jpeg?v=1782833144483" alt="Jardin" loading="lazy" />
       <div class="item-info">
@@ -1483,11 +1692,13 @@ A versatile, beautiful and personality-filled space to make your event something
 More events and information at: eventos.cafearte.net</p>
       </div>
       <button class="quick-add-btn" data-item-id="12S9FPF3V4G0M" aria-label="Agregar">+</button>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-chilaquiles">
       <h2 class="category-title">Chilaquiles</h2>
       <div class="items-grid">
+        
     <div class="menu-item has-modifiers" data-item-id="PFV81MCX6J46W">
       <img class="item-image" src="https://cloverstatic.com/menu-assets/items/PFV81MCX6J46W.jpeg" alt="Chilaquiles" loading="lazy" />
       <div class="item-info">
@@ -1504,11 +1715,13 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
         <span class="modifier-hint text-es">Toca para personalizar</span>
         <span class="modifier-hint text-en">Tap to customize</span>
       </div>
-    </div></div>
+    </div>
+      </div>
     </section>
     <section class="menu-section" id="cat-cancha-pikleball">
       <h2 class="category-title">Cancha Pikleball</h2>
       <div class="items-grid">
+        
     <div class="menu-item" data-item-id="TSS7S9YZS1Z8M">
       
       <div class="item-info">
@@ -1541,18 +1754,21 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
         
       </div>
       <button class="quick-add-btn" data-item-id="4RQM3FDMNZE1C" aria-label="Agregar">+</button>
-    </div></div>
+    </div>
+      </div>
     </section></main>
 
   <footer>
-    <span class="text-es">Actualizado el</span><span class="text-en">Updated on</span> 20 de agosto de 2026 a las 2:25 p.m.
+    <span class="text-es">Actualizado el</span>
+    <span class="text-en">Updated on</span>
+    1 de agosto de 2026 a las 11:04 p.m.
   </footer>
 
   <!-- CART FAB -->
   <button class="cart-fab" id="cart-fab" onclick="openCartDrawer()">
-    <span>🛒</span>
+    <span class="cart-fab-icon">🛒</span>
     <span class="cart-fab-count" id="cart-count">0</span>
-    <span id="cart-fab-total">$0.00</span>
+    <span class="cart-fab-total" id="cart-fab-total">$0.00</span>
   </button>
 
   <!-- CART OVERLAY -->
@@ -1562,95 +1778,45 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
   <div class="cart-drawer" id="cart-drawer">
     <div class="cart-drawer-header">
       <h2 class="cart-drawer-title">
-        <span class="text-es">Tu Orden</span><span class="text-en">Your Order</span>
+        <span class="text-es">Tu Orden</span>
+        <span class="text-en">Your Order</span>
       </h2>
       <button class="cart-close-btn" onclick="closeCartDrawer()">✕</button>
     </div>
-
-    <!-- Confirmation screen (hidden until order placed) -->
-    <div id="cart-confirmed" style="display:none;text-align:center;padding:3rem 1.4rem">
-      <div style="font-size:2.5rem;margin-bottom:1rem">✅</div>
-      <div id="conf-title" class="order-confirmed-title"></div>
-      <div id="conf-id" class="order-confirmed-id"></div>
-      <div id="conf-note" class="order-confirmed-note"></div>
-      <button class="btn-new-order" onclick="resetDrawer()">
-        <span class="text-es">Nueva orden</span><span class="text-en">New order</span>
-      </button>
-    </div>
-
-    <div class="cart-scroll" id="cart-main">
-      <!-- Items -->
-      <div class="cart-items-list" id="cart-items-list"></div>
-
-      <!-- Totals -->
-      <div class="cart-totals" id="cart-totals" style="display:none;">
-        <div class="totals-row">
-          <span><span class="text-es">Subtotal</span><span class="text-en">Subtotal</span></span>
-          <span id="t-subtotal">$0.00</span>
-        </div>
-        <div class="totals-row">
-          <span><span class="text-es">Impuesto (8.25%)</span><span class="text-en">Tax (8.25%)</span></span>
-          <span id="t-tax">$0.00</span>
-        </div>
-        <div class="totals-row">
-          <span><span class="text-es">Servicio (4%)</span><span class="text-en">Service fee (4%)</span></span>
-          <span id="t-service">$0.00</span>
-        </div>
-
-        <!-- Tip -->
-        <div class="tip-section">
-          <div class="tip-label"><span class="text-es">Propina</span><span class="text-en">Tip</span></div>
-          <div class="tip-buttons">
-            <button class="tip-btn" data-tip="15" onclick="setTip('pct',15)">15%</button>
-            <button class="tip-btn" data-tip="18" onclick="setTip('pct',18)">18%</button>
-            <button class="tip-btn" data-tip="20" onclick="setTip('pct',20)">20%</button>
-            <button class="tip-btn" data-tip="30" onclick="setTip('pct',30)">30%</button>
-            <button class="tip-btn" data-tip="custom" onclick="setTip('custom',0)">
-              <span class="text-es">Otra</span><span class="text-en">Custom</span>
-            </button>
-            <button class="tip-btn selected" data-tip="none" onclick="setTip('none',0)">
-              <span class="text-es">Sin propina</span><span class="text-en">No tip</span>
-            </button>
-          </div>
-          <div id="custom-tip-wrap" style="display:none;margin-bottom:.4rem">
-            <input type="number" id="custom-tip-input" class="form-input" min="0" step="0.01"
-              placeholder="$0.00" oninput="setTip('custom',0)" style="margin-bottom:0" />
-          </div>
-        </div>
-
-        <div class="totals-row">
-          <span><span class="text-es">Propina</span><span class="text-en">Tip</span></span>
-          <span id="t-tip">$0.00</span>
-        </div>
-        <div class="totals-divider"></div>
-        <div class="totals-row totals-total-row">
-          <span>Total</span>
-          <span id="t-total">$0.00</span>
-        </div>
+    <div class="cart-items-list" id="cart-items-list"></div>
+    <div class="cart-drawer-footer" id="cart-drawer-footer">
+      <div class="cart-total-row">
+        <span class="cart-total-label">Total</span>
+        <span class="cart-total-amount" id="cart-total-amount">$0.00</span>
       </div>
-    </div><!-- end cart-main -->
+      <label class="checkout-label text-es">Nombre *</label>
+      <label class="checkout-label text-en">Name *</label>
+      <input type="text" id="customer-name" class="checkout-input" maxlength="60"
+        placeholder="Tu nombre / Your name" autocomplete="name" />
 
-    <!-- Checkout form -->
-    <div class="cart-form" id="cart-form" style="display:none">
-      <input type="text" id="customer-name" class="form-input" placeholder="Nombre / Name *" maxlength="60" />
-      <div class="order-type-row">
-        <button class="order-type-btn" id="btn-table" onclick="selectOrderType('table')">
-          🪑 <span class="text-es">Mesa</span><span class="text-en">Table</span>
+      <label class="checkout-label text-es">Pedido para *</label>
+      <label class="checkout-label text-en">Order for *</label>
+      <div class="order-type-toggle">
+        <button class="order-type-btn active" id="btn-type-mesa" onclick="selectOrderType('mesa')">
+          <span class="text-es">Mesa</span><span class="text-en">Table</span>
         </button>
-        <button class="order-type-btn" id="btn-togo" onclick="selectOrderType('togo')">
-          🥡 <span class="text-es">Para llevar</span><span class="text-en">To-go</span>
+        <button class="order-type-btn" id="btn-type-llevar" onclick="selectOrderType('llevar')">
+          <span class="text-es">Para llevar</span><span class="text-en">To go</span>
         </button>
       </div>
-      <div id="table-num-wrap" style="display:none">
-        <input type="text" id="table-number" class="form-input" placeholder="# de mesa / Table # *" maxlength="10" />
+      <div id="table-number-wrap">
+        <input type="text" id="table-number-input" class="checkout-input" maxlength="20"
+          placeholder="# de mesa / Table number" />
       </div>
-      <div class="stripe-card-wrap">
-        <div id="stripe-card-element"></div>
-      </div>
-      <div id="stripe-error" class="stripe-error" style="display:none"></div>
-      <button class="btn-pay" id="btn-pay" onclick="placeOrder()">
-        <span class="text-es">Pagar</span><span class="text-en">Pay</span>
-        <span id="pay-total">$0.00</span>
+
+      <label class="checkout-label text-es">Tarjeta *</label>
+      <label class="checkout-label text-en">Card *</label>
+      <div class="stripe-card-wrap" id="stripe-card-element"></div>
+      <div class="stripe-error" id="stripe-error"></div>
+
+      <button class="btn-checkout" id="btn-pay" onclick="processPayment()">
+        <span id="btn-pay-label-es" class="text-es">Pagar $0.00</span>
+        <span id="btn-pay-label-en" class="text-en">Pay $0.00</span>
       </button>
     </div>
   </div>
@@ -1663,9 +1829,6 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
         <button class="modal-close" id="modal-close-btn" aria-label="Cerrar">✕</button>
         <div id="modal-name"></div>
         <div id="modal-base-price"></div>
-        <button id="modal-desc-toggle" onclick="toggleDesc()" style="display:none">
-          <span id="modal-desc-toggle-text"></span> <span id="modal-desc-arrow">▾</span>
-        </button>
         <div id="modal-description"></div>
       </div>
       <div id="modal-body"></div>
@@ -1686,19 +1849,14 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
   <script>
     var MENU_DATA = JSON.parse(document.getElementById('menu-data').textContent);
     var ORDERS_API_URL = '/api/create-order';
-    var PAYMENT_INTENT_URL = ORDERS_API_URL.replace('/create-order', '/create-payment-intent');
-
-    var TAX_RATE = 0.0825;
-    var SERVICE_RATE = 0.04;
-    var selectedTipCents = 0;
-    var tipMode = 'none';
-    var orderType = '';
 
     // ── LANGUAGE ──
     function getLang() { return document.documentElement.getAttribute('data-lang') || 'es'; }
     function setLang(lang) {
       document.documentElement.setAttribute('data-lang', lang);
-      document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.lang === lang); });
+      document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
       try { localStorage.setItem('menu-lang', lang); } catch(e) {}
     }
     try { var sl = localStorage.getItem('menu-lang'); if (sl) setLang(sl); } catch(e) {}
@@ -1709,63 +1867,24 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
 
     function saveCart() { try { localStorage.setItem('cafearte-cart', JSON.stringify(cart)); } catch(e) {} }
 
-    function cartSubtotal() { return cart.reduce(function(s,i) { return s + i.unitTotal * i.quantity; }, 0); }
-    function cartTax() { return Math.round(cartSubtotal() * TAX_RATE); }
-    function cartService() { return Math.round(cartSubtotal() * SERVICE_RATE); }
-    function cartGrand() { return cartSubtotal() + cartTax() + cartService() + selectedTipCents; }
-    function fmt(c) { return '$' + (c / 100).toFixed(2); }
+    function cartTotalCents() {
+      return cart.reduce(function(s, i) { return s + i.unitTotal * i.quantity; }, 0);
+    }
 
-    function updateBadge() {
-      var count = cart.reduce(function(s,i) { return s + i.quantity; }, 0);
+    function fmt(cents) { return '$' + (cents / 100).toFixed(2); }
+
+    function updateCartBadge() {
+      var count = cart.reduce(function(s, i) { return s + i.quantity; }, 0);
+      var total = fmt(cartTotalCents());
       document.getElementById('cart-count').textContent = count;
-      document.getElementById('cart-fab-total').textContent = fmt(cartSubtotal());
-      document.getElementById('cart-fab').style.display = count > 0 ? 'flex' : 'none';
-    }
-
-    function updateTotals() {
-      var sub = cartSubtotal();
-      var hasItems = cart.length > 0;
-      document.getElementById('cart-totals').style.display = hasItems ? 'block' : 'none';
-      document.getElementById('cart-form').style.display = hasItems ? 'block' : 'none';
-      if (!hasItems) return;
-      if (tipMode === 'pct') selectedTipCents = Math.round(sub * tipMode_pct / 100);
-      if (tipMode === 'custom') {
-        var v = parseFloat(document.getElementById('custom-tip-input').value) || 0;
-        selectedTipCents = Math.round(v * 100);
-      }
-      document.getElementById('t-subtotal').textContent = fmt(sub);
-      document.getElementById('t-tax').textContent = fmt(cartTax());
-      document.getElementById('t-service').textContent = fmt(cartService());
-      document.getElementById('t-tip').textContent = fmt(selectedTipCents);
-      document.getElementById('t-total').textContent = fmt(cartGrand());
-      document.getElementById('pay-total').textContent = fmt(cartGrand());
-    }
-
-    var tipMode_pct = 0;
-    function setTip(mode, pct) {
-      tipMode = mode;
-      tipMode_pct = pct;
-      if (mode === 'none') selectedTipCents = 0;
-      else if (mode === 'pct') selectedTipCents = Math.round(cartSubtotal() * pct / 100);
-      else if (mode === 'custom') {
-        var v = parseFloat(document.getElementById('custom-tip-input').value) || 0;
-        selectedTipCents = Math.round(v * 100);
-      }
-      document.querySelectorAll('.tip-btn').forEach(function(b) {
-        b.classList.toggle('selected',
-          (b.dataset.tip === String(pct) && mode === 'pct') ||
-          (b.dataset.tip === mode && mode !== 'pct')
-        );
-      });
-      document.getElementById('custom-tip-wrap').style.display = mode === 'custom' ? 'block' : 'none';
-      updateTotals();
-    }
-
-    function selectOrderType(type) {
-      orderType = type;
-      document.getElementById('btn-table').classList.toggle('selected', type === 'table');
-      document.getElementById('btn-togo').classList.toggle('selected', type === 'togo');
-      document.getElementById('table-num-wrap').style.display = type === 'table' ? 'block' : 'none';
+      document.getElementById('cart-fab-total').textContent = total;
+      document.getElementById('cart-total-amount').textContent = total;
+      var fab = document.getElementById('cart-fab');
+      fab.style.display = count > 0 ? 'flex' : 'none';
+      var esLbl = document.getElementById('btn-pay-label-es');
+      var enLbl = document.getElementById('btn-pay-label-en');
+      if (esLbl) esLbl.textContent = 'Pagar ' + total;
+      if (enLbl) enLbl.textContent = 'Pay ' + total;
     }
 
     function renderCartItems() {
@@ -1782,19 +1901,22 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
         var modsHtml = '';
         if (item.modifiers && item.modifiers.length > 0) {
           modsHtml = '<div class="cart-item-mods">' +
-            item.modifiers.map(function(m) { return m.name + (m.price > 0 ? ' +' + fmt(m.price) : ''); }).join(', ') +
-            '</div>';
+            item.modifiers.map(function(m) {
+              return m.name + (m.price > 0 ? ' +' + fmt(m.price) : '');
+            }).join(', ') + '</div>';
         }
         html += '<div class="cart-item">' +
           '<div class="cart-item-main">' +
-            '<div class="cart-item-name">' + item.name + '</div>' + modsHtml +
+            '<div class="cart-item-name">' + item.name + '</div>' +
+            modsHtml +
             '<div class="cart-item-price">' + fmt(item.unitTotal) + ' c/u</div>' +
           '</div>' +
           '<div class="cart-qty">' +
-            '<button onclick="updateQty(' + i + ',-1)">&#8722;</button>' +
+            '<button onclick="updateQty(' + i + ', -1)">−</button>' +
             '<span>' + item.quantity + '</span>' +
-            '<button onclick="updateQty(' + i + ',1)">+</button>' +
-          '</div></div>';
+            '<button onclick="updateQty(' + i + ', 1)">+</button>' +
+          '</div>' +
+        '</div>';
       }
       el.innerHTML = html;
     }
@@ -1819,22 +1941,33 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
       for (var j = 0; j < cart.length; j++) {
         if (cart[j].itemId === itemId && JSON.stringify(cart[j].modifiers) === modsKey) { found = j; break; }
       }
-      if (found >= 0) { cart[found].quantity++; }
-      else { cart.push({ itemId: itemId, name: item.name, price: item.price, modifiers: modifiers, quantity: 1, unitTotal: unitTotal }); }
-      saveCart(); updateBadge(); renderCartItems(); updateTotals();
-      var fab = document.getElementById('cart-fab');
-      fab.style.transform = 'translateY(-4px) scale(1.08)';
-      setTimeout(function() { fab.style.transform = ''; }, 250);
+      if (found >= 0) {
+        cart[found].quantity++;
+      } else {
+        cart.push({ itemId: itemId, name: item.name, price: item.price, modifiers: modifiers, quantity: 1, unitTotal: unitTotal });
+      }
+      saveCart();
+      updateCartBadge();
+      renderCartItems();
+      showAddedFeedback();
     }
 
     function updateQty(index, delta) {
       cart[index].quantity += delta;
       if (cart[index].quantity <= 0) cart.splice(index, 1);
-      saveCart(); updateBadge(); renderCartItems(); updateTotals();
+      saveCart();
+      updateCartBadge();
+      renderCartItems();
+    }
+
+    function showAddedFeedback() {
+      var fab = document.getElementById('cart-fab');
+      fab.style.transform = 'translateY(-4px) scale(1.08)';
+      setTimeout(function() { fab.style.transform = ''; }, 250);
     }
 
     function openCartDrawer() {
-      renderCartItems(); updateTotals();
+      renderCartItems();
       document.getElementById('cart-drawer').classList.add('open');
       document.getElementById('cart-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
@@ -1846,7 +1979,102 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
       document.body.style.overflow = '';
     }
 
-    // Quick add
+    var selectedOrderType = 'mesa';
+
+    function selectOrderType(type) {
+      selectedOrderType = type;
+      document.getElementById('btn-type-mesa').classList.toggle('active', type === 'mesa');
+      document.getElementById('btn-type-llevar').classList.toggle('active', type === 'llevar');
+      document.getElementById('table-number-wrap').style.display = type === 'mesa' ? 'block' : 'none';
+    }
+
+    function processPayment() {
+      if (cart.length === 0) return;
+      var lang = getLang();
+      var name = (document.getElementById('customer-name').value || '').trim();
+      var tableInput = (document.getElementById('table-number-input').value || '').trim();
+      var errEl = document.getElementById('stripe-error');
+      errEl.style.display = 'none';
+
+      if (!name) {
+        errEl.textContent = lang === 'en' ? 'Please enter your name.' : 'Ingresa tu nombre.';
+        errEl.style.display = 'block'; return;
+      }
+      if (selectedOrderType === 'mesa' && !tableInput) {
+        errEl.textContent = lang === 'en' ? 'Please enter your table number.' : 'Ingresa el número de mesa.';
+        errEl.style.display = 'block'; return;
+      }
+
+      var tableInfo = selectedOrderType === 'mesa'
+        ? 'Mesa ' + tableInput
+        : (lang === 'en' ? 'To go' : 'Para llevar');
+
+      var btn = document.getElementById('btn-pay');
+      btn.disabled = true;
+      document.getElementById('btn-pay-label-es').textContent = 'Procesando...';
+      document.getElementById('btn-pay-label-en').textContent = 'Processing...';
+
+      fetch('/api/payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: cartTotalCents() })
+      })
+      .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+      .then(function(res) {
+        if (!res.ok) throw new Error(res.data.error || 'Error al iniciar el pago');
+        return stripe.confirmCardPayment(res.data.clientSecret, {
+          payment_method: { card: cardElement, billing_details: { name: name } }
+        });
+      })
+      .then(function(result) {
+        if (result.error) throw new Error(result.error.message);
+        var piId = result.paymentIntent.id;
+        return fetch(ORDERS_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: cart, customerName: name, tableInfo: tableInfo, paymentIntentId: piId })
+        }).then(function(r) { return r.json().then(function(d) { return { data: d, piId: piId }; }); });
+      })
+      .then(function(res) {
+        showOrderConfirmation(res.data.orderId || res.piId, name, tableInfo, lang);
+      })
+      .catch(function(err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        updateCartBadge();
+      });
+    }
+
+    function showOrderConfirmation(orderId, name, tableInfo, lang) {
+      cart = [];
+      saveCart();
+      updateCartBadge();
+      document.getElementById('cart-drawer-footer').style.display = 'none';
+      document.getElementById('cart-items-list').innerHTML =
+        '<div class="order-confirmed">' +
+          '<div class="order-confirmed-icon">✅</div>' +
+          '<p class="order-confirmed-title">' + (lang === 'en' ? 'Payment received!' : '¡Pago recibido!') + '</p>' +
+          '<p class="order-confirmed-id"># ' + orderId + '</p>' +
+          '<p class="order-confirmed-note">' + name + ' — ' + tableInfo + '</p>' +
+          '<p class="order-confirmed-note">' + (lang === 'en' ? 'Your order is being prepared.' : 'Tu orden está siendo preparada.') + '</p>' +
+          '<button class="btn-new-order" onclick="resetCart()">' + (lang === 'en' ? 'New order' : 'Nuevo pedido') + '</button>' +
+        '</div>';
+    }
+
+    function resetCart() {
+      if (typeof cardElement !== 'undefined') cardElement.clear();
+      document.getElementById('customer-name').value = '';
+      document.getElementById('table-number-input').value = '';
+      document.getElementById('stripe-error').style.display = 'none';
+      selectOrderType('mesa');
+      document.getElementById('cart-drawer-footer').style.display = '';
+      document.getElementById('btn-pay').disabled = false;
+      updateCartBadge();
+      renderCartItems();
+    }
+
+    // Quick add (items without modifiers)
     document.querySelectorAll('.quick-add-btn').forEach(function(btn) {
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
@@ -1854,141 +2082,10 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
       });
     });
 
-    // ── HELPERS ──
-    async function fetchWithRetry(url, options) {
-      try { return await fetch(url, options); }
-      catch(e) {
-        await new Promise(function(r) { setTimeout(r, 1500); });
-        return fetch(url, options);
-      }
-    }
-
-    // ── PLACE ORDER ──
-    async function placeOrder() {
-      var lang = getLang();
-      var name = document.getElementById('customer-name').value.trim();
-      if (!name) {
-        alert(lang === 'en' ? 'Please enter your name.' : 'Por favor ingresa tu nombre.');
-        return;
-      }
-      if (!orderType) {
-        alert(lang === 'en' ? 'Select Table or To-go.' : 'Selecciona Mesa o Para llevar.');
-        return;
-      }
-      var tableNote = '';
-      if (orderType === 'table') {
-        var tnum = document.getElementById('table-number').value.trim();
-        if (!tnum) {
-          alert(lang === 'en' ? 'Please enter the table number.' : 'Por favor ingresa el número de mesa.');
-          return;
-        }
-        tableNote = (lang === 'en' ? 'Table ' : 'Mesa ') + tnum;
-      } else {
-        tableNote = lang === 'en' ? 'To-go' : 'Para llevar';
-      }
-
-      var total = cartGrand();
-      if (total < 50) { alert('El total mínimo es $0.50'); return; }
-
-      var btn = document.getElementById('btn-pay');
-      btn.disabled = true;
-      btn.querySelector('.text-es').textContent = 'Procesando...';
-      btn.querySelector('.text-en').textContent = 'Processing...';
-
-      try {
-        // 1. Create PaymentIntent (retry once on cold start)
-        var piRes = await fetchWithRetry(PAYMENT_INTENT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: total })
-        });
-        var piData = await piRes.json();
-        if (!piData.clientSecret) throw new Error(piData.error || 'Error al iniciar el pago');
-
-        // 2. Confirm with Stripe
-        var result = await stripe.confirmCardPayment(piData.clientSecret, {
-          payment_method: { card: cardElement, billing_details: { name: name } }
-        });
-        if (result.error) throw new Error(result.error.message);
-
-        // 3. Create Clover order
-        var orderRes = await fetch(ORDERS_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: cart,
-            customerName: name,
-            tableNote: tableNote,
-            taxCents: cartTax(),
-            serviceFeeCents: cartService(),
-            tipCents: selectedTipCents,
-            totalCents: total,
-            paymentIntentId: result.paymentIntent.id
-          })
-        });
-        var orderData = await orderRes.json();
-        if (!orderData.orderId) throw new Error(orderData.error || 'Error al registrar la orden');
-
-        showConfirmation(orderData.orderId, name);
-
-      } catch(err) {
-        btn.disabled = false;
-        btn.querySelector('.text-es').textContent = 'Pagar';
-        btn.querySelector('.text-en').textContent = 'Pay';
-        document.getElementById('stripe-error').textContent = err.message;
-        document.getElementById('stripe-error').style.display = 'block';
-      }
-    }
-
-    function showConfirmation(orderId, name) {
-      cart = []; selectedTipCents = 0; tipMode = 'none'; orderType = '';
-      saveCart(); updateBadge();
-      var lang = getLang();
-      document.getElementById('conf-title').textContent =
-        lang === 'en' ? 'Order placed, ' + name + '!' : '¡Pedido enviado, ' + name + '!';
-      document.getElementById('conf-id').textContent = '# ' + orderId;
-      document.getElementById('conf-note').textContent =
-        lang === 'en' ? 'Your payment was processed. Staff will prepare your order shortly.'
-                      : 'Tu pago fue procesado. El staff preparará tu orden en breve.';
-      document.getElementById('cart-confirmed').style.display = 'block';
-      document.getElementById('cart-main').style.display = 'none';
-      document.getElementById('cart-form').style.display = 'none';
-    }
-
-    function resetDrawer() {
-      document.getElementById('cart-confirmed').style.display = 'none';
-      document.getElementById('cart-main').style.display = 'block';
-      renderCartItems(); updateTotals();
-      var btn = document.getElementById('btn-pay');
-      if (btn) {
-        btn.disabled = false;
-        btn.querySelector('.text-es').textContent = 'Pagar';
-        btn.querySelector('.text-en').textContent = 'Pay';
-      }
-      document.getElementById('stripe-error').style.display = 'none';
-      orderType = '';
-      document.getElementById('btn-table').classList.remove('selected');
-      document.getElementById('btn-togo').classList.remove('selected');
-      document.getElementById('table-num-wrap').style.display = 'none';
-      document.getElementById('customer-name').value = '';
-    }
-
     // ── MODAL ──
     var currentItem = null;
     var currentItemId = null;
     var selectedMods = {};
-
-    function toggleDesc() {
-      var descEl = document.getElementById('modal-description');
-      var arrow = document.getElementById('modal-desc-arrow');
-      var toggleText = document.getElementById('modal-desc-toggle-text');
-      var lang = getLang();
-      var open = descEl.classList.toggle('open');
-      arrow.textContent = open ? '▴' : '▾';
-      toggleText.textContent = open
-        ? (lang === 'en' ? 'Hide description' : 'Ocultar descripción')
-        : (lang === 'en' ? 'See description' : 'Ver descripción');
-    }
 
     function linkify(text) {
       if (!text) return '';
@@ -2002,29 +2099,30 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
       currentItem = MENU_DATA[itemId];
       if (!currentItem) return;
       selectedMods = {};
+
       var lang = getLang();
       var imgWrap = document.getElementById('modal-image-wrap');
       var img = document.getElementById('modal-image');
       if (currentItem.imageUrl) { img.src = currentItem.imageUrl; imgWrap.style.display = 'block'; }
       else { imgWrap.style.display = 'none'; }
+
       document.getElementById('modal-name').textContent = currentItem.name;
       document.getElementById('modal-base-price').textContent =
-        currentItem.priceType === 'VARIABLE' ? (lang === 'en' ? 'Variable price' : 'Precio variable') : fmt(currentItem.price);
-      var desc = lang === 'en' ? (currentItem.description_en || currentItem.description_es) : currentItem.description_es;
+        currentItem.priceType === 'VARIABLE'
+          ? (lang === 'en' ? 'Variable price' : 'Precio variable')
+          : fmt(currentItem.price);
+
+      var desc = lang === 'en'
+        ? (currentItem.description_en || currentItem.description_es)
+        : currentItem.description_es;
       var descEl = document.getElementById('modal-description');
-      var toggleBtn = document.getElementById('modal-desc-toggle');
       descEl.innerHTML = desc ? linkify(desc) : '';
-      descEl.classList.remove('open');
-      if (desc) {
-        toggleBtn.style.display = 'inline-flex';
-        document.getElementById('modal-desc-toggle-text').textContent = lang === 'en' ? 'See description' : 'Ver descripción';
-        document.getElementById('modal-desc-arrow').textContent = '▾';
-      } else {
-        toggleBtn.style.display = 'none';
-      }
+      descEl.style.display = desc ? 'block' : 'none';
+
       var body = document.getElementById('modal-body');
       body.innerHTML = '';
       var groups = (currentItem.modifierGroups || []).filter(function(g) { return g.modifiers && g.modifiers.length > 0; });
+
       if (groups.length === 0) {
         body.innerHTML = '<p style="color:var(--cream-muted);font-size:.85rem;text-align:center;padding:1.5rem 0">' +
           (lang === 'en' ? 'No modifiers available' : 'Sin modificadores disponibles') + '</p>';
@@ -2054,7 +2152,7 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
             var mod = group.modifiers[mi];
             var btn = document.createElement('button');
             btn.className = 'modifier-btn';
-            btn.innerHTML = '<span class="mod-check">&#10003;</span>' +
+            btn.innerHTML = '<span class="mod-check">✓</span>' +
               '<span class="mod-name">' + mod.name + '</span>' +
               '<span class="modifier-price">' + (mod.price > 0 ? '+' + fmt(mod.price) : (lang === 'en' ? 'Included' : 'Incluido')) + '</span>';
             (function(gId, mId, gMax, b) {
@@ -2067,7 +2165,8 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
           body.appendChild(groupEl);
         }
       }
-      updateModalTotal();
+
+      updateTotal();
       document.getElementById('modal-overlay').classList.add('open');
       document.body.style.overflow = 'hidden';
     }
@@ -2082,8 +2181,9 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
       if (!selectedMods[groupId]) selectedMods[groupId] = [];
       var sel = selectedMods[groupId];
       var idx = sel.indexOf(modId);
-      if (maxAllowed === 1) { selectedMods[groupId] = [modId]; }
-      else {
+      if (maxAllowed === 1) {
+        selectedMods[groupId] = [modId];
+      } else {
         if (idx >= 0) { sel.splice(idx, 1); }
         else if (maxAllowed === 0 || sel.length < maxAllowed) { sel.push(modId); }
       }
@@ -2094,10 +2194,10 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
           if (mod._btn) mod._btn.classList.toggle('selected', selectedMods[groupId].indexOf(mod.id) >= 0);
         }
       }
-      updateModalTotal();
+      updateTotal();
     }
 
-    function updateModalTotal() {
+    function updateTotal() {
       if (!currentItem) return;
       var total = currentItem.priceType === 'VARIABLE' ? 0 : currentItem.price;
       for (var gId in selectedMods) {
@@ -2122,7 +2222,8 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
       var modsObj = {};
       for (var gId in selectedMods) { modsObj[gId] = selectedMods[gId].slice(); }
       addToCart(currentItemId, modsObj);
-      closeModal(); openCartDrawer();
+      closeModal();
+      openCartDrawer();
     }
 
     document.querySelectorAll('.menu-item.has-modifiers').forEach(function(el) {
@@ -2135,13 +2236,20 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
     });
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') { closeModal(); closeCartDrawer(); } });
 
+    updateCartBadge();
+    renderCartItems();
+
     // ── STRIPE ──
     var stripe = Stripe('pk_live_51TeI6H2M0oDJ2A8nELGM2WdopsTWdzrrmIJNDDxq2u1L26KA7Bh9SAkzKqcrhYDFDQLDsjQ2aMfLoKHK1oyj93ct00dmJnTsyt');
-    var elements = stripe.elements();
-    var cardElement = elements.create('card', {
-      hidePostalCode: true,
+    var stripeElements = stripe.elements();
+    var cardElement = stripeElements.create('card', {
       style: {
-        base: { color: '#F4EBDD', fontFamily: '"Manrope", system-ui, sans-serif', fontSize: '14px', '::placeholder': { color: 'rgba(244,235,221,0.45)' } },
+        base: {
+          color: '#F4EBDD',
+          fontFamily: '"Manrope", system-ui, sans-serif',
+          fontSize: '14px',
+          '::placeholder': { color: 'rgba(244,235,221,0.45)' }
+        },
         invalid: { color: '#ff6b6b' }
       }
     });
@@ -2151,9 +2259,6 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
       if (e.error) { errEl.textContent = e.error.message; errEl.style.display = 'block'; }
       else { errEl.style.display = 'none'; }
     });
-
-    updateBadge();
-    renderCartItems();
   </script>
 </body>
 </html>
