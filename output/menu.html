@@ -1545,7 +1545,7 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
     </section></main>
 
   <footer>
-    <span class="text-es">Actualizado el</span><span class="text-en">Updated on</span> 5 de septiembre de 2026 a las 11:25 a.m.
+    <span class="text-es">Actualizado el</span><span class="text-en">Updated on</span> 5 de septiembre de 2026 a las 2:13 p.m.
   </footer>
 
   <!-- CART FAB -->
@@ -1932,6 +1932,7 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
         showConfirmation(orderData.orderId, name);
 
       } catch(err) {
+        cardElement.clear();
         btn.disabled = false;
         btn.querySelector('.text-es').textContent = 'Pagar';
         btn.querySelector('.text-en').textContent = 'Pay';
@@ -1958,6 +1959,7 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
     function resetDrawer() {
       document.getElementById('cart-confirmed').style.display = 'none';
       document.getElementById('cart-main').style.display = 'block';
+      document.getElementById('cart-form').style.display = 'block';
       renderCartItems(); updateTotals();
       var btn = document.getElementById('btn-pay');
       if (btn) {
@@ -1965,6 +1967,7 @@ Additionally, they can be served with eggs, cecina, pork chop, chicken, and bean
         btn.querySelector('.text-es').textContent = 'Pagar';
         btn.querySelector('.text-en').textContent = 'Pay';
       }
+      cardElement.clear();
       document.getElementById('stripe-error').style.display = 'none';
       orderType = '';
       document.getElementById('btn-table').classList.remove('selected');
