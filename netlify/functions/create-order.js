@@ -5,6 +5,9 @@ const MID = process.env.CLOVER_MERCHANT_ID;
 const REGION = process.env.CLOVER_REGION || "us";
 const BASE = REGION === "eu" ? "api.eu.clover.com" : "api.clover.com";
 
+const TAX_RATE = 0.0825;
+const SERVICE_RATE = 0.04;
+
 function cloverFetch(method, path, body) {
   return new Promise((resolve, reject) => {
     const payload = body ? JSON.stringify(body) : null;
@@ -52,21 +55,30 @@ exports.handler = async function (event) {
   try { body = JSON.parse(event.body || "{}"); }
   catch { return { statusCode: 400, headers, body: JSON.stringify({ error: "JSON inválido" }) }; }
 
-  const { items, customerName, tableNote, taxCents = 0, serviceFeeCents = 0, tipCents = 0, totalCents = 0, paymentIntentId } = body;
+  let { items, customerName, tableNote, taxCents = 0, serviceFeeCents = 0, tipCents = 0, totalCents = 0, paymentIntentId } = body;
+
+  // If frontend didn't send totals, calculate from items (fallback)
+  if (totalCents === 0 && Array.isArray(items) && items.length > 0) {
+    const subCents = items.reduce((s, i) => s + (i.unitTotal || i.price || 0) * (i.quantity || 1), 0);
+    taxCents = Math.round(subCents * TAX_RATE);
+    serviceFeeCents = Math.round(subCents * SERVICE_RATE);
+    totalCents = subCents + taxCents + serviceFeeCents + (tipCents || 0);
+    console.log(`[calc] recalculated: sub=${subCents} tax=${taxCents} service=${serviceFeeCents} total=${totalCents}`);
+  }
 
   console.log(`[recv] totalCents=${totalCents} taxCents=${taxCents} serviceFeeCents=${serviceFeeCents} tipCents=${tipCents} items=${Array.isArray(items) ? items.length : 'none'}`);
-  if (Array.isArray(items) && items[0]) console.log(`[item0] ${JSON.stringify(items[0])}`);
 
   if (!Array.isArray(items) || items.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Carrito vacío" }) };
   }
 
   // Build order note with full payment breakdown
+  const subTotal = totalCents - taxCents - serviceFeeCents - (tipCents || 0);
   const noteLines = [];
   if (customerName) noteLines.push(`Cliente: ${customerName}`);
   if (tableNote) noteLines.push(tableNote);
   if (paymentIntentId) noteLines.push(`✅ PAGADO via Stripe: ${paymentIntentId}`);
-  noteLines.push(`Subtotal: ${fmt(totalCents - taxCents - serviceFeeCents - tipCents)}`);
+  noteLines.push(`Subtotal: ${fmt(subTotal)}`);
   noteLines.push(`Impuesto (8.25%): ${fmt(taxCents)}`);
   noteLines.push(`Servicio (4%): ${fmt(serviceFeeCents)}`);
   if (tipCents > 0) noteLines.push(`Propina: ${fmt(tipCents)}`);
@@ -79,39 +91,32 @@ exports.handler = async function (event) {
       cloverFetch("GET", `/v3/merchants/${MID}/tenders`),
     ]);
 
-    // Log raw API responses for debugging
-    console.log(`[order_types] status=${orderTypesRes.status} keys=${JSON.stringify(Object.keys(orderTypesRes.body || {}))}`);
-    console.log(`[tenders] status=${tendersRes.status} keys=${JSON.stringify(Object.keys(tendersRes.body || {}))}`);
-
-    // Find an online/pickup/delivery order type
+    // Find "Stripe" order type first, then any online/pickup/delivery type
     let orderTypeId = null;
-    const otElements = orderTypesRes.body?.elements || orderTypesRes.body?.orderTypes || [];
-    console.log(`[order_types] count=${otElements.length} list=${otElements.map(t => `${t.id}:${t.label||t.labelKey}`).join(", ")}`);
+    const otElements = orderTypesRes.body?.elements || [];
     if (otElements.length > 0) {
-      // Prefer "Stripe" type first (specifically created for Stripe payments),
-      // then any online/pickup/delivery type
       const match =
         otElements.find((t) => /^stripe$/i.test(t.label || t.labelKey || "")) ||
-        otElements.find((t) => /online|web|pickup|delivery|en\s*l[ií]nea/i.test(t.label || t.labelKey || ""));
+        otElements.find((t) => /online|web|pickup|delivery/i.test(t.label || t.labelKey || ""));
       orderTypeId = match ? match.id : null;
       console.log(`[order_types] selected=${match ? match.label || match.labelKey : 'none'} id=${orderTypeId}`);
     }
 
-    // Find a tender suitable for external/card payments
+    // Find "External Payment" tender — Clover rejects native credit/debit via API
     let tenderId = null;
-    const tElements = tendersRes.body?.elements || tendersRes.body?.tenders || [];
-    console.log(`[tenders] count=${tElements.length} list=${tElements.map(t => `${t.id}:${t.label||t.labelKey}`).join(", ")}`);
+    const tElements = tendersRes.body?.elements || [];
     if (tElements.length > 0) {
       const match =
-        tElements.find((t) => /credit|card|tarjeta/i.test(t.label || t.labelKey || "")) ||
-        tElements.find((t) => /custom|other|otro|extern/i.test(t.label || t.labelKey || "")) ||
-        tElements.find((t) => !/cash|efectivo/i.test(t.label || t.labelKey || "")) ||
+        tElements.find((t) => /external\s*payment/i.test(t.label || t.labelKey || "")) ||
+        tElements.find((t) => /external/i.test(t.label || t.labelKey || "")) ||
+        tElements.find((t) => /custom|other|otro/i.test(t.label || t.labelKey || "")) ||
+        tElements.find((t) => !/cash|efectivo|credit|debit|check|gift|levelup/i.test(t.label || t.labelKey || "")) ||
         tElements[0];
       if (match) tenderId = match.id;
       console.log(`[tenders] selected=${match ? match.label || match.labelKey : 'none'} id=${tenderId}`);
     }
 
-    // 1. Create order (with orderType if found)
+    // 1. Create order
     const orderPayload = {
       currency: "USD",
       state: "open",
@@ -152,7 +157,7 @@ exports.handler = async function (event) {
       }
     }
 
-    // 4. Register payment in Clover so order is marked as PAID → triggers auto-print
+    // 4. Register payment with External Payment tender → marks order as PAID → triggers auto-print
     if (tenderId) {
       const paymentPayload = {
         amount: totalCents,
@@ -169,10 +174,6 @@ exports.handler = async function (event) {
     } else {
       console.log(`[payment] skipped — no tenderId found`);
     }
-
-    // 5. Explicitly set order state to paid (ensures print trigger even if payment step above fails)
-    const paidRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}`, { state: "paid" });
-    console.log(`[order-state] status=${paidRes.status} body=${JSON.stringify(paidRes.body)}`);
 
     return { statusCode: 200, headers, body: JSON.stringify({ orderId, message: "Orden creada" }) };
   } catch (err) {
