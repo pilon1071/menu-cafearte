@@ -55,6 +55,7 @@ exports.handler = async function (event) {
   const { items, customerName, tableNote, taxCents = 0, serviceFeeCents = 0, tipCents = 0, totalCents = 0, paymentIntentId } = body;
 
   console.log(`[recv] totalCents=${totalCents} taxCents=${taxCents} serviceFeeCents=${serviceFeeCents} tipCents=${tipCents} items=${Array.isArray(items) ? items.length : 'none'}`);
+  if (Array.isArray(items) && items[0]) console.log(`[item0] ${JSON.stringify(items[0])}`);
 
   if (!Array.isArray(items) || items.length === 0) {
     return { statusCode: 400, headers, body: JSON.stringify({ error: "Carrito vacío" }) };
