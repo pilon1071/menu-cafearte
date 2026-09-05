@@ -87,9 +87,11 @@ exports.handler = async function (event) {
     const otElements = orderTypesRes.body?.elements || orderTypesRes.body?.orderTypes || [];
     console.log(`[order_types] count=${otElements.length} list=${otElements.map(t => `${t.id}:${t.label||t.labelKey}`).join(", ")}`);
     if (otElements.length > 0) {
-      const match = otElements.find((t) =>
-        /online|web|pickup|delivery|en\s*l[ií]nea/i.test(t.label || t.labelKey || "")
-      );
+      // Prefer "Stripe" type first (specifically created for Stripe payments),
+      // then any online/pickup/delivery type
+      const match =
+        otElements.find((t) => /^stripe$/i.test(t.label || t.labelKey || "")) ||
+        otElements.find((t) => /online|web|pickup|delivery|en\s*l[ií]nea/i.test(t.label || t.labelKey || ""));
       orderTypeId = match ? match.id : null;
       console.log(`[order_types] selected=${match ? match.label || match.labelKey : 'none'} id=${orderTypeId}`);
     }
@@ -150,7 +152,7 @@ exports.handler = async function (event) {
     }
 
     // 4. Register payment in Clover so order is marked as PAID → triggers auto-print
-    if (tenderId && totalCents > 0) {
+    if (tenderId) {
       const paymentPayload = {
         amount: totalCents,
         tipAmount: tipCents || 0,
@@ -164,7 +166,7 @@ exports.handler = async function (event) {
       const payRes = await cloverFetch("POST", `/v3/merchants/${MID}/orders/${orderId}/payments`, paymentPayload);
       console.log(`[payment] status=${payRes.status} body=${JSON.stringify(payRes.body)}`);
     } else {
-      console.log(`[payment] skipped — tenderId=${tenderId} totalCents=${totalCents}`);
+      console.log(`[payment] skipped — no tenderId found`);
     }
 
     // 5. Explicitly set order state to paid (ensures print trigger even if payment step above fails)
