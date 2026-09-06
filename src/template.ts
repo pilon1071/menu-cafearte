@@ -798,7 +798,6 @@ export function generateMenuHTML(
         showConfirmation(orderData.orderId, name);
 
       } catch(err) {
-        cardElement.clear();
         btn.disabled = false;
         btn.querySelector('.text-es').textContent = 'Pagar';
         btn.querySelector('.text-en').textContent = 'Pay';
